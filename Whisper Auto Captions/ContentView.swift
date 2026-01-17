@@ -5,6 +5,120 @@ import AVFoundation
 import Inject
 #endif
 
+// MARK: - Video Resolution
+enum VideoResolution: String, CaseIterable, Identifiable {
+    case hd720p = "720p HD"
+    case fullHD1080p = "1080p Full HD"
+    case uhd4K = "4K UHD"
+    case dci4K = "4K DCI"
+    case vertical1080p = "1080p Vertical"
+    case custom = "Custom"
+
+    var id: String { rawValue }
+
+    var width: Int {
+        switch self {
+        case .hd720p: return 1280
+        case .fullHD1080p: return 1920
+        case .uhd4K: return 3840
+        case .dci4K: return 4096
+        case .vertical1080p: return 1080
+        case .custom: return 1920
+        }
+    }
+
+    var height: Int {
+        switch self {
+        case .hd720p: return 720
+        case .fullHD1080p: return 1080
+        case .uhd4K, .dci4K: return 2160
+        case .vertical1080p: return 1920
+        case .custom: return 1080
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .hd720p: return "720p HD (1280×720)"
+        case .fullHD1080p: return "1080p Full HD (1920×1080)"
+        case .uhd4K: return "4K UHD (3840×2160)"
+        case .dci4K: return "4K DCI (4096×2160)"
+        case .vertical1080p: return "1080p Vertical (1080×1920)"
+        case .custom: return "Custom"
+        }
+    }
+
+    static func formatName(width: Int, height: Int, fps: Float) -> String {
+        let fpsInt = Int(fps * 100)
+
+        switch (width, height) {
+        case (1280, 720):  return "FFVideoFormat720p\(fpsInt)"
+        case (1920, 1080): return "FFVideoFormat1080p\(fpsInt)"
+        case (3840, 2160): return "FFVideoFormat3840x2160p\(fpsInt)"
+        case (4096, 2160): return "FFVideoFormat4096x2160p\(fpsInt)"
+        case (1080, 1920): return "FFVideoFormat1080x1920p\(fpsInt)"
+        default:          return "FFVideoFormatRateUndefined"
+        }
+    }
+
+    static func isValidResolution(width: Int, height: Int) -> (valid: Bool, message: String?) {
+        if width < 640 || width > 8192 || height < 640 || height > 8192 {
+            return (false, "Resolution must be between 640 and 8192")
+        }
+        if width % 2 != 0 || height % 2 != 0 {
+            return (true, "Odd values may cause encoding issues")
+        }
+        return (true, nil)
+    }
+}
+
+// MARK: - Frame Rate
+enum FrameRate: String, CaseIterable, Identifiable {
+    case fps23_976 = "23.976"
+    case fps24 = "24"
+    case fps25 = "25"
+    case fps29_97 = "29.97"
+    case fps30 = "30"
+    case fps50 = "50"
+    case fps59_94 = "59.94"
+    case fps60 = "60"
+    case custom = "Custom"
+
+    var id: String { rawValue }
+
+    var value: Float {
+        switch self {
+        case .fps23_976: return 23.976
+        case .fps24: return 24.0
+        case .fps25: return 25.0
+        case .fps29_97: return 29.97
+        case .fps30: return 30.0
+        case .fps50: return 50.0
+        case .fps59_94: return 59.94
+        case .fps60: return 60.0
+        case .custom: return 30.0
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .fps23_976: return "23.976 fps (Film)"
+        case .fps24: return "24 fps (Cinema)"
+        case .fps25: return "25 fps (PAL)"
+        case .fps29_97: return "29.97 fps (NTSC)"
+        case .fps30: return "30 fps"
+        case .fps50: return "50 fps (PAL HD)"
+        case .fps59_94: return "59.94 fps (NTSC HD)"
+        case .fps60: return "60 fps"
+        case .custom: return String(localized: "Custom", comment: "Custom frame rate option")
+        }
+    }
+
+    static func isValidFrameRate(_ value: Float) -> Bool {
+        return value > 0 && value <= 120
+    }
+}
+
 // MARK: - SRT Converter Utilities
 struct SRTConverter {
     static func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
@@ -29,7 +143,7 @@ struct SRTConverter {
         return formattedText
     }
 
-    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String) -> String {
+    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String, width: Int = 1920, height: Int = 1080) -> String {
         do {
             let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
             let subtitles: [String] = srtContent.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n\n")
@@ -48,13 +162,14 @@ struct SRTConverter {
             // resource
             let resourcesElement = XMLElement(name: "resources")
 
-            // format
+            // format - use dynamic resolution
+            let formatName = VideoResolution.formatName(width: width, height: height, fps: fps)
             let formatElement = XMLElement(name: "format")
             formatElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r1") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "FFVideoFormat1080p\(hundredFoldFps)") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: formatName) as! XMLNode)
             formatElement.addAttribute(XMLNode.attribute(withName: "frameDuration", stringValue: "100/\(hundredFoldFps)s") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "width", stringValue: "1920") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "height", stringValue: "1080") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "width", stringValue: String(width)) as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "height", stringValue: String(height)) as! XMLNode)
             formatElement.addAttribute(XMLNode.attribute(withName: "colorSpace", stringValue: "1-1-1 (Rec. 709)") as! XMLNode)
             resourcesElement.addChild(formatElement)
 
@@ -322,11 +437,23 @@ struct HomeView: View {
     #endif
     @State var fileURL: URL?
     @State var isSelected: Bool = false
-    @State private var fps: String = ""
+    @State private var selectedFrameRate: FrameRate = .fps30
+    @State private var customFps: String = "30"
     @State private var selectedLanguage = "Chinese Simplified"
     @State private var selectedModel = "Medium"
     @State private var selectedPreset: WhisperPreset = .balanced
     @State private var showSettings = false
+
+    private var currentFps: Float {
+        if selectedFrameRate == .custom {
+            return Float(customFps) ?? 30.0
+        }
+        return selectedFrameRate.value
+    }
+
+    private var isFpsValid: Bool {
+        return FrameRate.isValidFrameRate(currentFps)
+    }
 
     let languages = LanguageData.languages
     let languagesMapping = LanguageData.languageToCode
@@ -386,46 +513,64 @@ struct HomeView: View {
                 }
         
                 GridRow {
-                    Text("Frame Rate:")
-                    TextField (
-                        "eg: 30, 29.97",
-                        text: $fps
-                    )
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 100)
+                    Text(String(localized: "Frame Rate:", comment: "Frame rate label"))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker(selection: $selectedFrameRate, label: EmptyView()) {
+                            ForEach(FrameRate.allCases) { frameRate in
+                                Text(frameRate.displayName).tag(frameRate)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 200)
+
+                        if selectedFrameRate == .custom {
+                            HStack(spacing: 8) {
+                                TextField("fps", text: $customFps)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                                Text("fps")
+                            }
+
+                            if !isFpsValid {
+                                Text(String(localized: "Frame rate must be between 0 and 120", comment: "Invalid frame rate warning"))
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
                 }
-                
+
                 GridRow {
-                    Text("Model:")
+                    Text(String(localized: "Model:", comment: "Model label"))
                     Picker(selection: $selectedModel, label: EmptyView()) {
                         ForEach(models, id: \.self) {
                             Text($0)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 100)
+                    .frame(width: 200)
                 }
-                
+
                 GridRow {
-                    Text("Language:")
+                    Text(String(localized: "Language:", comment: "Language label"))
                     Picker(selection: $selectedLanguage, label: EmptyView()) {
                         ForEach(languages, id: \.self) {
                             Text($0)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 150)
+                    .frame(width: 200)
                 }
 
                 GridRow {
-                    Text("Preset:")
+                    Text(String(localized: "Preset:", comment: "Preset label"))
                     Picker(selection: $selectedPreset, label: EmptyView()) {
                         ForEach(WhisperPreset.allCases) { preset in
                             Text(preset.displayName).tag(preset)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 150)
+                    .frame(width: 200)
                     .onChange(of: selectedPreset) { newPreset in
                         settingsManager.currentPreset = newPreset
                     }
@@ -436,7 +581,7 @@ struct HomeView: View {
                         Button(action: { showSettings = true }) {
                             HStack {
                                 Image(systemName: "gear")
-                                Text("Settings")
+                                Text(String(localized: "Settings", comment: "Settings button"))
                             }
                         }
 
@@ -445,25 +590,25 @@ struct HomeView: View {
                         let applicationSupportDirectory = try! fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                         let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
                         try? fileManager.createDirectory(at: whisperAutoCaptionsURL, withIntermediateDirectories: true, attributes: nil)
-                        let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(selectedModel.lowercased()).bin")
-                        
+                        let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(modelsMapping[selectedModel]!).bin")
+
                         if fileManager.fileExists(atPath: destinationURL.path) {
 //                            print("File exists")
                             whisper_auto_captions()
                         } else {
 //                            print("File does not exist")
-                            download_model(model: selectedModel.lowercased()) { success in
+                            download_model(model: modelsMapping[selectedModel]!) { success in
                                 if success {
                                     whisper_auto_captions()
                                 } else {
-                        
+
                                 }
                             }
                         }
                         }, label: {
-                            Text("Create")
+                            Text(String(localized: "Create", comment: "Create button"))
                         }).buttonStyle(BorderedProminentButtonStyle())
-                            .disabled(fileURL == nil || fps.isEmpty)
+                            .disabled(fileURL == nil || !isFpsValid)
                     }
                 }.gridCellColumns(2)
                     .gridCellAnchor(.center)
@@ -537,7 +682,7 @@ struct HomeView: View {
                 let outputSRTFilePath = merge_srt(srt_files: srtFiles)
                 // srt to fcpxml
                 self.status = "Done"
-                self.outputFCPXMLFilePath = SRTConverter.srtToFCPXML(srtPath: outputSRTFilePath, fps: Float(fps)!, projectName: projectName, language: selectedLanguage)
+                self.outputFCPXMLFilePath = SRTConverter.srtToFCPXML(srtPath: outputSRTFilePath, fps: self.currentFps, projectName: projectName, language: selectedLanguage)
 
                 self.outputSRTFilePath = outputSRTFilePath
             }
@@ -1068,12 +1213,52 @@ struct SRTConverterInputView: View {
     let languages: [String]
 
     @State private var fileName: String = ""
+    @State private var selectedResolution: VideoResolution = .fullHD1080p
+    @State private var customWidth: String = "1920"
+    @State private var customHeight: String = "1080"
+    @State private var selectedFrameRate: FrameRate = .fps30
+    @State private var customFps: String = "30"
+
+    private var currentWidth: Int {
+        if selectedResolution == .custom {
+            return Int(customWidth) ?? 1920
+        }
+        return selectedResolution.width
+    }
+
+    private var currentHeight: Int {
+        if selectedResolution == .custom {
+            return Int(customHeight) ?? 1080
+        }
+        return selectedResolution.height
+    }
+
+    private var currentFps: Float {
+        if selectedFrameRate == .custom {
+            return Float(customFps) ?? 30.0
+        }
+        return selectedFrameRate.value
+    }
+
+    private var isResolutionValid: Bool {
+        let validation = VideoResolution.isValidResolution(width: currentWidth, height: currentHeight)
+        return validation.valid
+    }
+
+    private var resolutionWarning: String? {
+        let validation = VideoResolution.isValidResolution(width: currentWidth, height: currentHeight)
+        return validation.message
+    }
+
+    private var isFpsValid: Bool {
+        return FrameRate.isValidFrameRate(currentFps)
+    }
 
     var body: some View {
         VStack {
             Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
                 GridRow {
-                    Text("SRT File:")
+                    Text(String(localized: "SRT File:", comment: "SRT file label"))
                     HStack {
                         Button(action: {
                             let panel = NSOpenPanel()
@@ -1089,7 +1274,7 @@ struct SRTConverterInputView: View {
                                 }
                             }
                         }) {
-                            Text("Choose File")
+                            Text(String(localized: "Choose File", comment: "Choose file button"))
                         }
 
                         if srtFileURL != nil {
@@ -1099,39 +1284,91 @@ struct SRTConverterInputView: View {
                 }
 
                 GridRow {
-                    Text("Project Name:")
-                    TextField("Project name for FCPXML", text: $projectName)
+                    Text(String(localized: "Project Name:", comment: "Project name label"))
+                    TextField(String(localized: "Project name for FCPXML", comment: "Project name placeholder"), text: $projectName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(width: 200)
                 }
 
                 GridRow {
-                    Text("Frame Rate:")
-                    TextField("eg: 30, 29.97", text: $fps)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(width: 100)
+                    Text(String(localized: "Frame Rate:", comment: "Frame rate label"))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker(selection: $selectedFrameRate, label: EmptyView()) {
+                            ForEach(FrameRate.allCases) { frameRate in
+                                Text(frameRate.displayName).tag(frameRate)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 200)
+
+                        if selectedFrameRate == .custom {
+                            HStack(spacing: 8) {
+                                TextField("fps", text: $customFps)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                                Text("fps")
+                            }
+
+                            if !isFpsValid {
+                                Text(String(localized: "Frame rate must be between 0 and 120", comment: "Invalid frame rate warning"))
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
                 }
 
                 GridRow {
-                    Text("Language:")
+                    Text(String(localized: "Resolution:", comment: "Resolution label"))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker(selection: $selectedResolution, label: EmptyView()) {
+                            ForEach(VideoResolution.allCases) { resolution in
+                                Text(resolution.displayName).tag(resolution)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 200)
+
+                        if selectedResolution == .custom {
+                            HStack(spacing: 8) {
+                                TextField(String(localized: "Width", comment: "Width placeholder"), text: $customWidth)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                                Text("×")
+                                TextField(String(localized: "Height", comment: "Height placeholder"), text: $customHeight)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                            }
+
+                            if let warning = resolutionWarning {
+                                Text(warning)
+                                    .font(.caption)
+                                    .foregroundColor(isResolutionValid ? .orange : .red)
+                            }
+                        }
+                    }
+                }
+
+                GridRow {
+                    Text(String(localized: "Language:", comment: "Language label"))
                     Picker(selection: $selectedLanguage, label: EmptyView()) {
                         ForEach(languages, id: \.self) {
                             Text($0)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 150)
+                    .frame(width: 200)
                 }
 
                 GridRow {
                     Button(action: {
                         convertSRTtoFCPXML()
                     }, label: {
-                        Text("Convert to FCPXML")
+                        Text(String(localized: "Convert to FCPXML", comment: "Convert button label"))
                     })
                     .buttonStyle(BorderedProminentButtonStyle())
                     .gridCellAnchor(.center)
-                    .disabled(srtFileURL == nil || fps.isEmpty || projectName.isEmpty)
+                    .disabled(srtFileURL == nil || projectName.isEmpty || !isResolutionValid || !isFpsValid)
                 }.gridCellColumns(2)
             }
             .padding()
@@ -1140,15 +1377,16 @@ struct SRTConverterInputView: View {
     }
 
     private func convertSRTtoFCPXML() {
-        guard let srtURL = srtFileURL,
-              let fpsValue = Float(fps) else { return }
+        guard let srtURL = srtFileURL else { return }
 
         let srtPath = srtURL.path
         outputFCPXMLFilePath = SRTConverter.srtToFCPXML(
             srtPath: srtPath,
-            fps: fpsValue,
+            fps: currentFps,
             projectName: projectName,
-            language: selectedLanguage
+            language: selectedLanguage,
+            width: currentWidth,
+            height: currentHeight
         )
 
         if outputFCPXMLFilePath != "Error" {
