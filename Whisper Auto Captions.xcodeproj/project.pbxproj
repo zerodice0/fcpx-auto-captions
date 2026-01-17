@@ -14,6 +14,7 @@
 		D0F287212A46D9B5006B8C16 /* fcpx-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = D0F2871E2A46D9B5006B8C16 /* fcpx-icon.png */; };
 		D0F287222A46D9B5006B8C16 /* ffmpeg in Resources */ = {isa = PBXBuildFile; fileRef = D0F2871F2A46D9B5006B8C16 /* ffmpeg */; };
 		D0F8863B2A5085AB00394A77 /* whisper-cli in Resources */ = {isa = PBXBuildFile; fileRef = D0F8863A2A5085AB00394A77 /* whisper-cli */; };
+		DB1BE4D92F1B4BA300791F0C /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = DB1BE4D82F1B4BA300791F0C /* Inject */; };
 		E1A0B1012B0100010001AAA1 /* WhisperSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1112B0100010001AAA1 /* WhisperSettings.swift */; };
 		E1A0B1022B0100010001AAA2 /* WhisperPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */; };
 		E1A0B1032B0100010001AAA3 /* LanguageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1132B0100010001AAA3 /* LanguageData.swift */; };
@@ -63,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB1BE4D92F1B4BA300791F0C /* Inject in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,6 +219,9 @@
 				Base,
 			);
 			mainGroup = D06D321A2A418DFA005F59B8;
+			packageReferences = (
+				DB1BE4D72F1B4BA300791F0C /* XCRemoteSwiftPackageReference "Inject" */,
+			);
 			productRefGroup = D06D32242A418DFA005F59B8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -464,6 +469,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB1BE4D72F1B4BA300791F0C /* XCRemoteSwiftPackageReference "Inject" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzysztofzablocki/Inject.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB1BE4D82F1B4BA300791F0C /* Inject */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB1BE4D72F1B4BA300791F0C /* XCRemoteSwiftPackageReference "Inject" */;
+			productName = Inject;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D06D321B2A418DFA005F59B8 /* Project object */;
 }

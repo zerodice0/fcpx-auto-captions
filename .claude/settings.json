@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__plugin_serena_serena__*"
+      "mcp__plugin_serena_serena__*",
+      "mcp__macos_ui_automation__*"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }

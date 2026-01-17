@@ -1,6 +1,9 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+#if DEBUG
+import Inject
+#endif
 
 // MARK: - SRT Converter Utilities
 struct SRTConverter {
@@ -258,6 +261,9 @@ struct SRTConverter {
 
 // MARK: - Main Content View with Tabs
 struct ContentView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @State private var selectedTab = 0
 
     var body: some View {
@@ -275,11 +281,17 @@ struct ContentView: View {
                 .tag(1)
         }
         .frame(minWidth: 600, minHeight: 600)
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 }
 
 // MARK: - Transcription Tab (Original Functionality)
 struct TranscriptionTab: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @State var startCreatingAutoCaptions = false
     @State var progress = 0.0
     @State var progressPercentage = 0
@@ -293,17 +305,25 @@ struct TranscriptionTab: View {
     @State var outputFCPXMLFilePath = ""
 
     var body: some View {
-        if startCreatingAutoCaptions {
-            ProcessView(progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath, isPresented: $startCreatingAutoCaptions)
-        } else {
-            HomeView(startCreatingAutoCaptions: $startCreatingAutoCaptions, progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath)
+        Group {
+            if startCreatingAutoCaptions {
+                ProcessView(progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath, isPresented: $startCreatingAutoCaptions)
+            } else {
+                HomeView(startCreatingAutoCaptions: $startCreatingAutoCaptions, progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath)
+            }
         }
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 }
 
 
 
 struct HomeView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @State var fileURL: URL?
     @State var isSelected: Bool = false
     @State private var fps: String = ""
@@ -474,8 +494,11 @@ struct HomeView: View {
         .sheet(isPresented: $showSettings) {
             SettingsWindowView()
         }
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
-    
+
     func whisper_auto_captions() {
         self.startCreatingAutoCaptions = true
         let filePathString = fileURL!.path
@@ -786,6 +809,9 @@ struct HomeView: View {
 }
 
 struct ProcessView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @Binding var progress: Double
     @Binding var progressPercentage: Int
     @Binding var totalBatch: Int
@@ -933,8 +959,11 @@ struct ProcessView: View {
             }
         }
         .padding()
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
-    
+
     func backtofcpx(fcpxml_path: String) {
         let command =
         """
@@ -1003,6 +1032,9 @@ struct ProcessView: View {
 
 // MARK: - SRT Converter Views
 struct SRTConverterView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @State private var srtFileURL: URL?
     @State private var fps: String = ""
     @State private var selectedLanguage = "English"
@@ -1033,10 +1065,16 @@ struct SRTConverterView: View {
                 languages: languages
             )
         }
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 }
 
 struct SRTConverterInputView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @Binding var srtFileURL: URL?
     @Binding var fps: String
     @Binding var selectedLanguage: String
@@ -1114,6 +1152,9 @@ struct SRTConverterInputView: View {
             }
             .padding()
         }
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 
     private func convertSRTtoFCPXML() {
@@ -1135,6 +1176,9 @@ struct SRTConverterInputView: View {
 }
 
 struct SRTConverterResultView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     let projectName: String
     @Binding var outputFCPXMLFilePath: String
     @Binding var conversionComplete: Bool
@@ -1193,6 +1237,9 @@ struct SRTConverterResultView: View {
             .controlSize(.large)
         }
         .padding()
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 
     private func resetState() {

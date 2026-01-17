@@ -6,8 +6,14 @@
 //
 
 import SwiftUI
+#if DEBUG
+import Inject
+#endif
 
 struct PerformanceSettingsView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @Binding var settings: WhisperSettings
 
     private var maxThreads: Int {
@@ -79,5 +85,8 @@ struct PerformanceSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 }

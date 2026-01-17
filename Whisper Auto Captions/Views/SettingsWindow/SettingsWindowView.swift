@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if DEBUG
+import Inject
+#endif
 
 enum SettingsSection: String, CaseIterable, Identifiable {
     case quality = "Quality"
@@ -39,6 +42,9 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 }
 
 struct SettingsWindowView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var settingsManager = SettingsManager.shared
     @State private var selectedSection: SettingsSection = .quality
@@ -80,6 +86,9 @@ struct SettingsWindowView: View {
             .frame(minWidth: 400, minHeight: 400)
         }
         .frame(minWidth: 600, minHeight: 500)
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 
     // MARK: - Settings Content

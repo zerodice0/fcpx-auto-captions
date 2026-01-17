@@ -6,8 +6,14 @@
 //
 
 import SwiftUI
+#if DEBUG
+import Inject
+#endif
 
 struct OutputSettingsView: View {
+    #if DEBUG
+    @ObserveInjection var inject
+    #endif
     @Binding var settings: WhisperSettings
 
     var body: some View {
@@ -75,5 +81,8 @@ struct OutputSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        #if DEBUG
+        .enableInjection()
+        #endif
     }
 }
