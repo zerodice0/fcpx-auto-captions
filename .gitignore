@@ -1,8 +1,29 @@
-# Claude Code local settings (individual session permissions)
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Xcode user data
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Xcode build
+build/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# Claude Code local settings
 .claude/settings.local.json
 
 # Serena plugin local data
 .serena/
 
-# macOS
-.DS_Store
+# Conductor workspace data
+.context/
