@@ -13,7 +13,22 @@
 		D06D322E2A418DFB005F59B8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D06D322D2A418DFB005F59B8 /* Preview Assets.xcassets */; };
 		D0F287212A46D9B5006B8C16 /* fcpx-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = D0F2871E2A46D9B5006B8C16 /* fcpx-icon.png */; };
 		D0F287222A46D9B5006B8C16 /* ffmpeg in Resources */ = {isa = PBXBuildFile; fileRef = D0F2871F2A46D9B5006B8C16 /* ffmpeg */; };
-		D0F8863B2A5085AB00394A77 /* main in Resources */ = {isa = PBXBuildFile; fileRef = D0F8863A2A5085AB00394A77 /* main */; };
+		D0F8863B2A5085AB00394A77 /* whisper-cli in Resources */ = {isa = PBXBuildFile; fileRef = D0F8863A2A5085AB00394A77 /* whisper-cli */; };
+		E1A0B1012B0100010001AAA1 /* WhisperSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1112B0100010001AAA1 /* WhisperSettings.swift */; };
+		E1A0B1022B0100010001AAA2 /* WhisperPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */; };
+		E1A0B1032B0100010001AAA3 /* LanguageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1132B0100010001AAA3 /* LanguageData.swift */; };
+		E1A0B1042B0100010001AAA4 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1142B0100010001AAA4 /* SettingsManager.swift */; };
+		E1A0B1052B0100010001AAA5 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1152B0100010001AAA5 /* WhisperService.swift */; };
+		E1A0B1062B0100010001AAA6 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1162B0100010001AAA6 /* AudioService.swift */; };
+		E1A0B1072B0100010001AAA7 /* SRTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1172B0100010001AAA7 /* SRTService.swift */; };
+		E1A0B1082B0100010001AAA8 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1182B0100010001AAA8 /* DownloadService.swift */; };
+		E1A0B1092B0100010001AAA9 /* DownloadDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */; };
+		E1A0B10A2B0100010001AAAA /* SettingsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11A2B0100010001AAAA /* SettingsWindowView.swift */; };
+		E1A0B10B2B0100010001AAAB /* QualitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11B2B0100010001AAAB /* QualitySettingsView.swift */; };
+		E1A0B10C2B0100010001AAAC /* PerformanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11C2B0100010001AAAC /* PerformanceSettingsView.swift */; };
+		E1A0B10D2B0100010001AAAD /* OutputSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */; };
+		E1A0B10E2B0100010001AAAE /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */; };
+		E1A0B10F2B0100010001AAAF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E1A0B11F2B0100010001AAAF /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,7 +40,22 @@
 		D06D322F2A418DFB005F59B8 /* Whisper_Auto_Captions.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Whisper_Auto_Captions.entitlements; sourceTree = "<group>"; };
 		D0F2871E2A46D9B5006B8C16 /* fcpx-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fcpx-icon.png"; sourceTree = "<group>"; };
 		D0F2871F2A46D9B5006B8C16 /* ffmpeg */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = ffmpeg; sourceTree = "<group>"; };
-		D0F8863A2A5085AB00394A77 /* main */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = main; path = "../../../Downloads/whisper.cpp-master/main"; sourceTree = "<group>"; };
+		D0F8863A2A5085AB00394A77 /* whisper-cli */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "whisper-cli"; sourceTree = "<group>"; };
+		E1A0B1112B0100010001AAA1 /* WhisperSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperSettings.swift; sourceTree = "<group>"; };
+		E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperPreset.swift; sourceTree = "<group>"; };
+		E1A0B1132B0100010001AAA3 /* LanguageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageData.swift; sourceTree = "<group>"; };
+		E1A0B1142B0100010001AAA4 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
+		E1A0B1152B0100010001AAA5 /* WhisperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
+		E1A0B1162B0100010001AAA6 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
+		E1A0B1172B0100010001AAA7 /* SRTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTService.swift; sourceTree = "<group>"; };
+		E1A0B1182B0100010001AAA8 /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
+		E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadDelegate.swift; sourceTree = "<group>"; };
+		E1A0B11A2B0100010001AAAA /* SettingsWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowView.swift; sourceTree = "<group>"; };
+		E1A0B11B2B0100010001AAAB /* QualitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualitySettingsView.swift; sourceTree = "<group>"; };
+		E1A0B11C2B0100010001AAAC /* PerformanceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceSettingsView.swift; sourceTree = "<group>"; };
+		E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputSettingsView.swift; sourceTree = "<group>"; };
+		E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
+		E1A0B11F2B0100010001AAAF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,13 +88,19 @@
 		D06D32252A418DFA005F59B8 /* Whisper Auto Captions */ = {
 			isa = PBXGroup;
 			children = (
-				D0F8863A2A5085AB00394A77 /* main */,
+				E1A0B1212B0100010001AAB1 /* Models */,
+				E1A0B1222B0100010001AAB2 /* Managers */,
+				E1A0B1232B0100010001AAB3 /* Services */,
+				E1A0B1242B0100010001AAB4 /* Utilities */,
+				E1A0B1252B0100010001AAB5 /* Views */,
+				D0F8863A2A5085AB00394A77 /* whisper-cli */,
 				D0F2871E2A46D9B5006B8C16 /* fcpx-icon.png */,
 				D0F2871F2A46D9B5006B8C16 /* ffmpeg */,
 				D06D32262A418DFA005F59B8 /* Whisper_Auto_CaptionsApp.swift */,
 				D06D32282A418DFA005F59B8 /* ContentView.swift */,
 				D06D322A2A418DFB005F59B8 /* Assets.xcassets */,
 				D06D322F2A418DFB005F59B8 /* Whisper_Auto_Captions.entitlements */,
+				E1A0B11F2B0100010001AAAF /* Localizable.xcstrings */,
 				D06D322C2A418DFB005F59B8 /* Preview Content */,
 			);
 			path = "Whisper Auto Captions";
@@ -76,6 +112,63 @@
 				D06D322D2A418DFB005F59B8 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		E1A0B1212B0100010001AAB1 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B1112B0100010001AAA1 /* WhisperSettings.swift */,
+				E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */,
+				E1A0B1132B0100010001AAA3 /* LanguageData.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E1A0B1222B0100010001AAB2 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B1142B0100010001AAA4 /* SettingsManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		E1A0B1232B0100010001AAB3 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B1152B0100010001AAA5 /* WhisperService.swift */,
+				E1A0B1162B0100010001AAA6 /* AudioService.swift */,
+				E1A0B1172B0100010001AAA7 /* SRTService.swift */,
+				E1A0B1182B0100010001AAA8 /* DownloadService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E1A0B1242B0100010001AAB4 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		E1A0B1252B0100010001AAB5 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B1262B0100010001AAB6 /* SettingsWindow */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E1A0B1262B0100010001AAB6 /* SettingsWindow */ = {
+			isa = PBXGroup;
+			children = (
+				E1A0B11A2B0100010001AAAA /* SettingsWindowView.swift */,
+				E1A0B11B2B0100010001AAAB /* QualitySettingsView.swift */,
+				E1A0B11C2B0100010001AAAC /* PerformanceSettingsView.swift */,
+				E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */,
+				E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */,
+			);
+			path = SettingsWindow;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,6 +212,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ko,
 				Base,
 			);
 			mainGroup = D06D321A2A418DFA005F59B8;
@@ -136,11 +230,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0F8863B2A5085AB00394A77 /* main in Resources */,
+				D0F8863B2A5085AB00394A77 /* whisper-cli in Resources */,
 				D06D322E2A418DFB005F59B8 /* Preview Assets.xcassets in Resources */,
 				D0F287212A46D9B5006B8C16 /* fcpx-icon.png in Resources */,
 				D06D322B2A418DFB005F59B8 /* Assets.xcassets in Resources */,
 				D0F287222A46D9B5006B8C16 /* ffmpeg in Resources */,
+				E1A0B10F2B0100010001AAAF /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -153,6 +248,20 @@
 			files = (
 				D06D32292A418DFA005F59B8 /* ContentView.swift in Sources */,
 				D06D32272A418DFA005F59B8 /* Whisper_Auto_CaptionsApp.swift in Sources */,
+				E1A0B1012B0100010001AAA1 /* WhisperSettings.swift in Sources */,
+				E1A0B1022B0100010001AAA2 /* WhisperPreset.swift in Sources */,
+				E1A0B1032B0100010001AAA3 /* LanguageData.swift in Sources */,
+				E1A0B1042B0100010001AAA4 /* SettingsManager.swift in Sources */,
+				E1A0B1052B0100010001AAA5 /* WhisperService.swift in Sources */,
+				E1A0B1062B0100010001AAA6 /* AudioService.swift in Sources */,
+				E1A0B1072B0100010001AAA7 /* SRTService.swift in Sources */,
+				E1A0B1082B0100010001AAA8 /* DownloadService.swift in Sources */,
+				E1A0B1092B0100010001AAA9 /* DownloadDelegate.swift in Sources */,
+				E1A0B10A2B0100010001AAAA /* SettingsWindowView.swift in Sources */,
+				E1A0B10B2B0100010001AAAB /* QualitySettingsView.swift in Sources */,
+				E1A0B10C2B0100010001AAAC /* PerformanceSettingsView.swift in Sources */,
+				E1A0B10D2B0100010001AAAD /* OutputSettingsView.swift in Sources */,
+				E1A0B10E2B0100010001AAAE /* AdvancedSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,7 +395,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Whisper Auto Captions/Preview Content\"";
-				DEVELOPMENT_TEAM = VFBY2CCN3N;
+				DEVELOPMENT_TEAM = G868P72L5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -315,7 +424,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Whisper Auto Captions/Preview Content\"";
-				DEVELOPMENT_TEAM = VFBY2CCN3N;
+				DEVELOPMENT_TEAM = G868P72L5A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

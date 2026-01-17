@@ -309,15 +309,18 @@ struct HomeView: View {
     @State private var fps: String = ""
     @State private var selectedLanguage = "Chinese Simplified"
     @State private var selectedModel = "Medium"
-    let languages = ["Arabic", "Azerbaijani", "Armenian", "Albanian", "Afrikaans", "Amharic", "Assamese", "Bulgarian", "Bengali", "Breton", "Basque", "Bosnian", "Belarusian", "Bashkir", "Chinese Simplified", "Chinese Traditional", "Catalan", "Czech", "Croatian", "Dutch", "Danish", "English", "Estonian", "French", "Finnish", "Faroese", "German", "Greek", "Galician", "Georgian", "Gujarati", "Hindi", "Hebrew", "Hungarian", "Haitian creole", "Hawaiian", "Hausa", "Italian", "Indonesian", "Icelandic", "Japanese", "Javanese", "Korean", "Kannada", "Kazakh", "Khmer", "Lithuanian", "Latin", "Latvian", "Lao", "Luxembourgish", "Lingala", "Malay", "Maori", "Malayalam", "Macedonian", "Mongolian", "Marathi", "Maltese", "Myanmar", "Malagasy", "Norwegian", "Nepali", "Nynorsk", "Occitan", "Portuguese", "Polish", "Persian", "Punjabi", "Pashto", "Russian", "Romanian", "Spanish", "Swedish", "Slovak", "Serbian", "Slovenian", "Swahili", "Sinhala", "Shona", "Somali", "Sindhi", "Sanskrit", "Sundanese", "Turkish", "Tamil", "Thai", "Telugu", "Tajik", "Turkmen", "Tibetan", "Tagalog", "Tatar", "Ukrainian", "Urdu", "Uzbek", "Vietnamese", "Welsh", "Yoruba", "Yiddish"]
-    let languagesMapping = ["Arabic": "ar", "Azerbaijani": "az", "Armenian": "hy", "Albanian": "sq", "Afrikaans": "af", "Amharic": "am", "Assamese": "as", "Bulgarian": "bg", "Bengali": "bn", "Breton": "br", "Basque": "eu", "Bosnian": "bs", "Belarusian": "be", "Bashkir": "ba", "Chinese Simplified": "zh", "Chinese Traditional": "zh", "Catalan": "ca", "Czech": "cs", "Croatian": "hr", "Dutch": "nl", "Danish": "da", "English": "en", "Estonian": "et", "French": "fr", "Finnish": "fi", "Faroese": "fo", "German": "de", "Greek": "el", "Galician": "gl", "Georgian": "ka", "Gujarati": "gu", "Hindi": "hi", "Hebrew": "he", "Hungarian": "hu", "Haitian creole": "ht", "Hawaiian": "haw", "Hausa": "ha", "Italian": "it", "Indonesian": "id", "Icelandic": "is", "Japanese": "ja", "Javanese": "jw", "Korean": "ko", "Kannada": "kn", "Kazakh": "kk", "Khmer": "km", "Lithuanian": "lt", "Latin": "la", "Latvian": "lv", "Lao": "lo", "Luxembourgish": "lb", "Lingala": "ln", "Malay": "ms", "Maori": "mi", "Malayalam": "ml", "Macedonian": "mk", "Mongolian": "mn", "Marathi": "mr", "Maltese": "mt", "Myanmar": "my", "Malagasy": "mg", "Norwegian": "no", "Nepali": "ne", "Nynorsk": "nn", "Occitan": "oc", "Portuguese": "pt", "Polish": "pl", "Persian": "fa", "Punjabi": "pa", "Pashto": "ps", "Russian": "ru", "Romanian": "ro", "Spanish": "es", "Swedish": "sv", "Slovak": "sk", "Serbian": "sr", "Slovenian": "sl", "Swahili": "sw", "Sinhala": "si", "Shona": "sn", "Somali": "so", "Sindhi": "sd", "Sanskrit": "sa", "Sundanese": "su", "Turkish": "tr", "Tamil": "ta", "Thai": "th", "Telugu": "te", "Tajik": "tg", "Turkmen": "tk", "Tibetan": "bo", "Tagalog": "tl", "Tatar": "tt", "Ukrainian": "uk", "Urdu": "ur", "Uzbek": "uz", "Vietnamese": "vi", "Welsh": "cy", "Yoruba": "yo", "Yiddish": "yi"]
-    let models = ["Large", "Medium", "Small", "Base", "Tiny"]
-    let modelsMapping = ["Large": "ggml-large", "Medium": "ggml-medium", "Small": "ggml-small", "Base":"ggml-base", "Tiny":"ggml-tiny"]
+    @State private var selectedPreset: WhisperPreset = .balanced
+    @State private var showSettings = false
 
+    let languages = LanguageData.languages
+    let languagesMapping = LanguageData.languageToCode
+    let models = ModelData.models
+    let modelsMapping = ModelData.modelToFileName
 
-    
+    @ObservedObject var settingsManager = SettingsManager.shared
+
     @State var fileName: String = ""
-    
+
     @Binding var startCreatingAutoCaptions: Bool
     @Binding var progress: Double
     @Binding var progressPercentage: Int
@@ -395,11 +398,33 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 100)
+                    .frame(width: 150)
                 }
-                
+
                 GridRow {
-                    Button(action: {
+                    Text("Preset:")
+                    Picker(selection: $selectedPreset, label: EmptyView()) {
+                        ForEach(WhisperPreset.allCases) { preset in
+                            Text(preset.displayName).tag(preset)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 150)
+                    .onChange(of: selectedPreset) { newPreset in
+                        settingsManager.currentPreset = newPreset
+                    }
+                }
+
+                GridRow {
+                    HStack(spacing: 12) {
+                        Button(action: { showSettings = true }) {
+                            HStack {
+                                Image(systemName: "gear")
+                                Text("Settings")
+                            }
+                        }
+
+                        Button(action: {
                         let fileManager = FileManager.default
                         let applicationSupportDirectory = try! fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                         let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
@@ -419,12 +444,13 @@ struct HomeView: View {
                                 }
                             }
                         }
-                    }, label: {
-                        Text("Create")
-                    }).buttonStyle(BorderedProminentButtonStyle())
-                        .gridCellAnchor(.center)
-                        .disabled(fileURL == nil || fps.isEmpty)
+                        }, label: {
+                            Text("Create")
+                        }).buttonStyle(BorderedProminentButtonStyle())
+                            .disabled(fileURL == nil || fps.isEmpty)
+                    }
                 }.gridCellColumns(2)
+                    .gridCellAnchor(.center)
             }
             if isDownloading {
                 ProgressView(value: downloadProgress)
@@ -444,6 +470,9 @@ struct HomeView: View {
                 }),
                 secondaryButton: .default(Text(""), action: {})
             )
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsWindowView()
         }
     }
     

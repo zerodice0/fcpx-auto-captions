@@ -1,0 +1,1077 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Advanced" : {
+      "comment" : "Advanced settings section",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "고급"
+          }
+        }
+      }
+    },
+    "Balanced" : {
+      "comment" : "Balanced preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balanced"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "균형"
+          }
+        }
+      }
+    },
+    "Beam Size:" : {
+      "comment" : "Beam size setting label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beam Size:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빔 크기:"
+          }
+        }
+      }
+    },
+    "Beam search width" : {
+      "comment" : "Beam size description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beam search width"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빔 검색 너비"
+          }
+        }
+      }
+    },
+    "Best Quality" : {
+      "comment" : "Best Quality preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best Quality"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최고 품질"
+          }
+        }
+      }
+    },
+    "Best-of:" : {
+      "comment" : "Best-of setting label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best-of:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best-of:"
+          }
+        }
+      }
+    },
+    "Candidates to evaluate" : {
+      "comment" : "Best-of description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Candidates to evaluate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "평가할 후보 수"
+          }
+        }
+      }
+    },
+    "Characters (0 = no limit)" : {
+      "comment" : "Max length description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Characters (0 = no limit)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "글자 수 (0 = 제한 없음)"
+          }
+        }
+      }
+    },
+    "Custom" : {
+      "comment" : "Custom preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용자 정의"
+          }
+        }
+      }
+    },
+    "Decoding Parameters" : {
+      "comment" : "Decoding section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decoding Parameters"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "디코딩 매개변수"
+          }
+        }
+      }
+    },
+    "Default: 0.01" : {
+      "comment" : "Word threshold default",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default: 0.01"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본값: 0.01"
+          }
+        }
+      }
+    },
+    "Default: 0.6" : {
+      "comment" : "No speech default",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default: 0.6"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본값: 0.6"
+          }
+        }
+      }
+    },
+    "Detection Thresholds" : {
+      "comment" : "Detection section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detection Thresholds"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "감지 임계값"
+          }
+        }
+      }
+    },
+    "Disable GPU Acceleration" : {
+      "comment" : "No GPU toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable GPU Acceleration"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPU 가속 비활성화"
+          }
+        }
+      }
+    },
+    "Disable Timestamps" : {
+      "comment" : "No timestamps toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable Timestamps"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "타임스탬프 비활성화"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "comment" : "Done button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        }
+      }
+    },
+    "Entropy Threshold:" : {
+      "comment" : "Entropy threshold label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entropy Threshold:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "엔트로피 임계값:"
+          }
+        }
+      }
+    },
+    "Fast" : {
+      "comment" : "Fast preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빠름"
+          }
+        }
+      }
+    },
+    "Faster inference (may reduce accuracy)" : {
+      "comment" : "Flash attention description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faster inference (may reduce accuracy)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빠른 추론 (정확도 감소 가능)"
+          }
+        }
+      }
+    },
+    "Fastest" : {
+      "comment" : "Fastest preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fastest"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가장 빠름"
+          }
+        }
+      }
+    },
+    "Flash Attention" : {
+      "comment" : "Flash attention toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flash Attention"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flash Attention"
+          }
+        }
+      }
+    },
+    "Force CPU-only processing" : {
+      "comment" : "No GPU description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Force CPU-only processing"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPU만 사용하여 처리"
+          }
+        }
+      }
+    },
+    "GPU Settings" : {
+      "comment" : "GPU section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPU Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPU 설정"
+          }
+        }
+      }
+    },
+    "Guide transcription with context or vocabulary hints" : {
+      "comment" : "Prompt description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guide transcription with context or vocabulary hints"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "문맥 또는 어휘 힌트로 음성 인식 안내"
+          }
+        }
+      }
+    },
+    "Higher values for best-of and beam-size improve accuracy but increase processing time." : {
+      "comment" : "Quality tips",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Higher values for best-of and beam-size improve accuracy but increase processing time."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "best-of와 beam-size 값이 높을수록 정확도가 향상되지만 처리 시간이 늘어납니다."
+          }
+        }
+      }
+    },
+    "Identify and label different speakers" : {
+      "comment" : "Diarize description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identify and label different speakers"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 화자를 식별하고 레이블 지정"
+          }
+        }
+      }
+    },
+    "Initial Prompt:" : {
+      "comment" : "Prompt label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Initial Prompt:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "초기 프롬프트:"
+          }
+        }
+      }
+    },
+    "Lightweight speaker diarization for smaller models" : {
+      "comment" : "Tiny diarize description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lightweight speaker diarization for smaller models"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작은 모델용 경량 화자 분리"
+          }
+        }
+      }
+    },
+    "Log Prob Threshold:" : {
+      "comment" : "Log prob threshold label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log Prob Threshold:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그 확률 임계값:"
+          }
+        }
+      }
+    },
+    "Max Segment Length:" : {
+      "comment" : "Max length label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max Segment Length:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최대 세그먼트 길이:"
+          }
+        }
+      }
+    },
+    "Max: %lld" : {
+      "comment" : "Max threads description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max: %lld"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최대: %lld"
+          }
+        }
+      }
+    },
+    "More threads generally improve speed, but using too many can cause diminishing returns. Flash Attention can significantly speed up processing on supported hardware." : {
+      "comment" : "Performance tips",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More threads generally improve speed, but using too many can cause diminishing returns. Flash Attention can significantly speed up processing on supported hardware."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스레드 수가 많을수록 일반적으로 속도가 향상되지만, 너무 많으면 효과가 줄어들 수 있습니다. Flash Attention은 지원되는 하드웨어에서 처리 속도를 크게 높일 수 있습니다."
+          }
+        }
+      }
+    },
+    "No Speech Threshold:" : {
+      "comment" : "No speech threshold label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Speech Threshold:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무음 임계값:"
+          }
+        }
+      }
+    },
+    "Output" : {
+      "comment" : "Output settings section",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "출력"
+          }
+        }
+      }
+    },
+    "Output text only without timing information" : {
+      "comment" : "No timestamps description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output text only without timing information"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "타이밍 정보 없이 텍스트만 출력"
+          }
+        }
+      }
+    },
+    "Parallel processing units" : {
+      "comment" : "Processors description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel processing units"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "병렬 처리 단위"
+          }
+        }
+      }
+    },
+    "Performance" : {
+      "comment" : "Performance settings section",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performance"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "성능"
+          }
+        }
+      }
+    },
+    "Processors:" : {
+      "comment" : "Processors setting label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processors:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프로세서:"
+          }
+        }
+      }
+    },
+    "Prompt" : {
+      "comment" : "Prompt section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prompt"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프롬프트"
+          }
+        }
+      }
+    },
+    "Quality" : {
+      "comment" : "Quality settings section",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quality"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "품질"
+          }
+        }
+      }
+    },
+    "Quality" : {
+      "comment" : "Quality preset name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quality"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "고품질"
+          }
+        }
+      }
+    },
+    "Reset to Defaults" : {
+      "comment" : "Reset button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset to Defaults"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본값으로 재설정"
+          }
+        }
+      }
+    },
+    "Segment Length" : {
+      "comment" : "Segment length section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segment Length"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세그먼트 길이"
+          }
+        }
+      }
+    },
+    "Segment validation (default: -1.0)" : {
+      "comment" : "Log prob description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segment validation (default: -1.0)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세그먼트 검증 (기본값: -1.0)"
+          }
+        }
+      }
+    },
+    "Segment validation (default: 2.4)" : {
+      "comment" : "Entropy description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segment validation (default: 2.4)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세그먼트 검증 (기본값: 2.4)"
+          }
+        }
+      }
+    },
+    "Setting a max segment length helps ensure subtitles fit on screen. Enable 'Split on Word' to prevent awkward mid-word breaks." : {
+      "comment" : "Output tips",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setting a max segment length helps ensure subtitles fit on screen. Enable 'Split on Word' to prevent awkward mid-word breaks."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "최대 세그먼트 길이를 설정하면 자막이 화면에 맞게 표시됩니다. '단어 단위 분할'을 활성화하면 어색한 단어 중간 끊김을 방지할 수 있습니다."
+          }
+        }
+      }
+    },
+    "Speaker Diarization" : {
+      "comment" : "Diarization section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speaker Diarization"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화자 분리"
+          }
+        }
+      }
+    },
+    "Speaker diarization helps distinguish between multiple speakers but may increase processing time." : {
+      "comment" : "Diarization tip",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speaker diarization helps distinguish between multiple speakers but may increase processing time."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화자 분리는 여러 화자를 구분하는 데 도움이 되지만 처리 시간이 늘어날 수 있습니다."
+          }
+        }
+      }
+    },
+    "Split on Word Boundaries" : {
+      "comment" : "Split on word toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Split on Word Boundaries"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단어 경계에서 분할"
+          }
+        }
+      }
+    },
+    "Temperature:" : {
+      "comment" : "Temperature setting label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temperature:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "온도:"
+          }
+        }
+      }
+    },
+    "Threading" : {
+      "comment" : "Threading section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threading"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스레딩"
+          }
+        }
+      }
+    },
+    "Threads:" : {
+      "comment" : "Threads setting label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Threads:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스레드:"
+          }
+        }
+      }
+    },
+    "Timestamps" : {
+      "comment" : "Timestamps section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timestamps"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "타임스탬프"
+          }
+        }
+      }
+    },
+    "Tiny Diarization (Experimental)" : {
+      "comment" : "Tiny diarize toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiny Diarization (Experimental)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiny 화자 분리 (실험적)"
+          }
+        }
+      }
+    },
+    "Tips" : {
+      "comment" : "Tips section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tips"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "팁"
+          }
+        }
+      }
+    },
+    "Translate to English" : {
+      "comment" : "Translate toggle label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate to English"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영어로 번역"
+          }
+        }
+      }
+    },
+    "Translate non-English audio to English" : {
+      "comment" : "Translate description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate non-English audio to English"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "영어가 아닌 오디오를 영어로 번역"
+          }
+        }
+      }
+    },
+    "Translation" : {
+      "comment" : "Translation section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "번역"
+          }
+        }
+      }
+    },
+    "Use the prompt to provide context about the audio content or include specific vocabulary that should be recognized." : {
+      "comment" : "Prompt tip",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the prompt to provide context about the audio content or include specific vocabulary that should be recognized."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프롬프트를 사용하여 오디오 콘텐츠에 대한 문맥을 제공하거나 인식해야 할 특정 어휘를 포함하세요."
+          }
+        }
+      }
+    },
+    "Validation Thresholds" : {
+      "comment" : "Validation section header",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Validation Thresholds"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검증 임계값"
+          }
+        }
+      }
+    },
+    "Word Threshold:" : {
+      "comment" : "Word threshold label",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Word Threshold:"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단어 임계값:"
+          }
+        }
+      }
+    },
+    "0.0 = greedy, higher = random" : {
+      "comment" : "Temperature description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.0 = greedy, higher = random"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.0 = 탐욕적, 높을수록 = 무작위"
+          }
+        }
+      }
+    },
+    "Avoid breaking words when splitting segments" : {
+      "comment" : "Split on word description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avoid breaking words when splitting segments"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세그먼트 분할 시 단어 끊김 방지"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
