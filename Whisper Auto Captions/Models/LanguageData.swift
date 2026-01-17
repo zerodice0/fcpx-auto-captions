@@ -90,16 +90,39 @@ struct LanguageData {
 struct ModelData {
     /// All available model names (display names)
     static let models: [String] = [
-        "Large", "Medium", "Small", "Base", "Tiny"
+        // Large variants
+        "Large-v3-turbo",
+        "Large-v3",
+        "Large-v2",
+        "Large-v1",
+        // Medium
+        "Medium",
+        "Medium.en",
+        // Small
+        "Small",
+        "Small.en",
+        // Base
+        "Base",
+        "Base.en",
+        // Tiny
+        "Tiny",
+        "Tiny.en"
     ]
 
-    /// Mapping from display name to model file name
+    /// Mapping from display name to model file name (without ggml- prefix)
     static let modelToFileName: [String: String] = [
-        "Large": "ggml-large",
-        "Medium": "ggml-medium",
-        "Small": "ggml-small",
-        "Base": "ggml-base",
-        "Tiny": "ggml-tiny"
+        "Large-v3-turbo": "large-v3-turbo",
+        "Large-v3": "large-v3",
+        "Large-v2": "large-v2",
+        "Large-v1": "large-v1",
+        "Medium": "medium",
+        "Medium.en": "medium.en",
+        "Small": "small",
+        "Small.en": "small.en",
+        "Base": "base",
+        "Base.en": "base.en",
+        "Tiny": "tiny",
+        "Tiny.en": "tiny.en"
     ]
 
     /// Get file name for a model
@@ -110,18 +133,25 @@ struct ModelData {
     /// Get model size description
     static func sizeDescription(for model: String) -> String {
         switch model {
-        case "Large":
+        case "Large-v3-turbo":
+            return String(localized: "~1.5 GB - Fast & accurate", comment: "Large-v3-turbo model description")
+        case "Large-v3", "Large-v2", "Large-v1":
             return String(localized: "~3 GB - Best accuracy", comment: "Large model description")
-        case "Medium":
+        case "Medium", "Medium.en":
             return String(localized: "~1.5 GB - Good balance", comment: "Medium model description")
-        case "Small":
+        case "Small", "Small.en":
             return String(localized: "~500 MB - Faster", comment: "Small model description")
-        case "Base":
+        case "Base", "Base.en":
             return String(localized: "~150 MB - Fast", comment: "Base model description")
-        case "Tiny":
+        case "Tiny", "Tiny.en":
             return String(localized: "~75 MB - Fastest", comment: "Tiny model description")
         default:
             return ""
         }
+    }
+
+    /// Check if model is English-only
+    static func isEnglishOnly(_ model: String) -> Bool {
+        return model.hasSuffix(".en")
     }
 }
