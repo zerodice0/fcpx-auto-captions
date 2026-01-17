@@ -15,6 +15,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case performance = "Performance"
     case output = "Output"
     case advanced = "Advanced"
+    case aiAssistant = "AI Assistant"
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .performance: return "bolt.fill"
         case .output: return "doc.text.fill"
         case .advanced: return "gearshape.2.fill"
+        case .aiAssistant: return "wand.and.stars"
         }
     }
 
@@ -37,6 +39,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
             return String(localized: "Output", comment: "Output settings section")
         case .advanced:
             return String(localized: "Advanced", comment: "Advanced settings section")
+        case .aiAssistant:
+            return String(localized: "AI Assistant", comment: "AI Assistant settings section")
         }
     }
 }
@@ -101,6 +105,8 @@ struct SettingsWindowView: View {
             OutputSettingsView(settings: $settingsManager.settings)
         case .advanced:
             AdvancedSettingsView(settings: $settingsManager.settings)
+        case .aiAssistant:
+            AIAssistantSettingsView(settings: $settingsManager.settings)
         }
     }
 
@@ -126,5 +132,87 @@ struct SettingsWindowView: View {
 struct SettingsWindowView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsWindowView()
+    }
+}
+
+// MARK: - InfoButton Component
+/// A small info button that shows a tooltip on hover
+struct InfoButton: View {
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
+    let recommendation: LocalizedStringKey?
+
+    @State private var isHovering = false
+    @State private var showPopover = false
+
+    init(
+        title: LocalizedStringKey,
+        description: LocalizedStringKey,
+        recommendation: LocalizedStringKey? = nil
+    ) {
+        self.title = title
+        self.description = description
+        self.recommendation = recommendation
+    }
+
+    var body: some View {
+        Image(systemName: "info.circle")
+            .font(.system(size: 12))
+            .foregroundColor(.secondary)
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering {
+                    // Delay before showing popover
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        if isHovering {
+                            showPopover = true
+                        }
+                    }
+                } else {
+                    showPopover = false
+                }
+            }
+            .popover(isPresented: $showPopover, arrowEdge: .trailing) {
+                InfoTooltipContent(
+                    title: title,
+                    description: description,
+                    recommendation: recommendation
+                )
+            }
+            .accessibilityLabel(title)
+            .accessibilityHint(description)
+    }
+}
+
+/// Content view for the info tooltip popover
+private struct InfoTooltipContent: View {
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
+    let recommendation: LocalizedStringKey?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+
+            Text(description)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let recommendation = recommendation {
+                Divider()
+                HStack(spacing: 4) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundColor(.yellow)
+                        .font(.caption)
+                    Text(recommendation)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(12)
+        .frame(width: 280, alignment: .leading)
     }
 }

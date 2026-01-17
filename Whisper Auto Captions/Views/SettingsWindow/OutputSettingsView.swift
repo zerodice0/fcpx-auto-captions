@@ -26,19 +26,24 @@ struct OutputSettingsView: View {
                     TextField("", value: $settings.maxLen, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "Characters (0 = no limit)", comment: "Max length description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.maxlen.title",
+                        description: "info.maxlen.description",
+                        recommendation: "info.maxlen.recommendation"
+                    )
                 }
 
                 // Split on Word
-                Toggle(isOn: $settings.splitOnWord) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.splitOnWord) {
                         Text(String(localized: "Split on Word Boundaries", comment: "Split on word toggle label"))
-                        Text(String(localized: "Avoid breaking words when splitting segments", comment: "Split on word description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.splitonword.title",
+                        description: "info.splitonword.description",
+                        recommendation: "info.splitonword.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Segment Length", comment: "Segment length section header"))
@@ -46,13 +51,15 @@ struct OutputSettingsView: View {
 
             Section {
                 // No Timestamps
-                Toggle(isOn: $settings.noTimestamps) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.noTimestamps) {
                         Text(String(localized: "Disable Timestamps", comment: "No timestamps toggle label"))
-                        Text(String(localized: "Output text only without timing information", comment: "No timestamps description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.notimestamps.title",
+                        description: "info.notimestamps.description",
+                        recommendation: "info.notimestamps.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Timestamps", comment: "Timestamps section header"))
@@ -60,13 +67,15 @@ struct OutputSettingsView: View {
 
             Section {
                 // Translate
-                Toggle(isOn: $settings.translate) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.translate) {
                         Text(String(localized: "Translate to English", comment: "Translate toggle label"))
-                        Text(String(localized: "Translate non-English audio to English", comment: "Translate description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.translate.title",
+                        description: "info.translate.description",
+                        recommendation: "info.translate.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Translation", comment: "Translation section header"))

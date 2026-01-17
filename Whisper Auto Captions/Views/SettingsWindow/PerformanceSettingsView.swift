@@ -34,6 +34,12 @@ struct PerformanceSettingsView: View {
                     Text(String(localized: "Max: \(maxThreads)", comment: "Max threads description"))
                         .foregroundColor(.secondary)
                         .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.threads.title",
+                        description: "info.threads.description",
+                        recommendation: "info.threads.recommendation"
+                    )
                 }
 
                 // Processors
@@ -44,9 +50,12 @@ struct PerformanceSettingsView: View {
                         Text("\(settings.processors)")
                             .frame(width: 40)
                     }
-                    Text(String(localized: "Parallel processing units", comment: "Processors description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.processors.title",
+                        description: "info.processors.description",
+                        recommendation: "info.processors.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Threading", comment: "Threading section header"))
@@ -54,23 +63,27 @@ struct PerformanceSettingsView: View {
 
             Section {
                 // No GPU
-                Toggle(isOn: $settings.noGPU) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.noGPU) {
                         Text(String(localized: "Disable GPU Acceleration", comment: "No GPU toggle label"))
-                        Text(String(localized: "Force CPU-only processing", comment: "No GPU description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.nogpu.title",
+                        description: "info.nogpu.description",
+                        recommendation: "info.nogpu.recommendation"
+                    )
                 }
 
                 // Flash Attention
-                Toggle(isOn: $settings.flashAttention) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.flashAttention) {
                         Text(String(localized: "Flash Attention", comment: "Flash attention toggle label"))
-                        Text(String(localized: "Faster inference (may reduce accuracy)", comment: "Flash attention description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.flashattention.title",
+                        description: "info.flashattention.description",
+                        recommendation: "info.flashattention.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "GPU Settings", comment: "GPU section header"))

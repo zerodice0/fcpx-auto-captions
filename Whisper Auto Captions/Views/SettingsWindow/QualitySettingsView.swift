@@ -27,9 +27,12 @@ struct QualitySettingsView: View {
                         Text("\(settings.bestOf)")
                             .frame(width: 40)
                     }
-                    Text(String(localized: "Candidates to evaluate", comment: "Best-of description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.bestof.title",
+                        description: "info.bestof.description",
+                        recommendation: "info.bestof.recommendation"
+                    )
                 }
 
                 // Beam Size
@@ -40,9 +43,12 @@ struct QualitySettingsView: View {
                         Text("\(settings.beamSize)")
                             .frame(width: 40)
                     }
-                    Text(String(localized: "Beam search width", comment: "Beam size description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.beamsize.title",
+                        description: "info.beamsize.description",
+                        recommendation: "info.beamsize.recommendation"
+                    )
                 }
 
                 // Temperature
@@ -52,9 +58,12 @@ struct QualitySettingsView: View {
                     TextField("", value: $settings.temperature, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "0.0 = greedy, higher = random", comment: "Temperature description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.temperature.title",
+                        description: "info.temperature.description",
+                        recommendation: "info.temperature.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Decoding Parameters", comment: "Decoding section header"))
@@ -68,9 +77,12 @@ struct QualitySettingsView: View {
                     TextField("", value: $settings.entropyThreshold, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "Segment validation (default: 2.4)", comment: "Entropy description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.entropy.title",
+                        description: "info.entropy.description",
+                        recommendation: "info.entropy.recommendation"
+                    )
                 }
 
                 // Log Probability Threshold
@@ -80,9 +92,12 @@ struct QualitySettingsView: View {
                     TextField("", value: $settings.logProbThreshold, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "Segment validation (default: -1.0)", comment: "Log prob description"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.logprob.title",
+                        description: "info.logprob.description",
+                        recommendation: "info.logprob.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Validation Thresholds", comment: "Validation section header"))
