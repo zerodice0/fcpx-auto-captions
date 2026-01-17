@@ -488,6 +488,7 @@ struct HomeView: View {
             Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
                 GridRow {
                         Text("Audio File:")
+                            .gridColumnAlignment(.trailing)
                         HStack {
                             Button(action: {
                                 let panel = NSOpenPanel()
@@ -505,13 +506,14 @@ struct HomeView: View {
                             }) {
                                 Text("Choose File")
                             }
-        
+
                             if self.fileURL != nil {
                                 Text(fileName)
                             }
                         }
+                        .gridColumnAlignment(.leading)
                 }
-        
+
                 GridRow {
                     Text(String(localized: "Frame Rate:", comment: "Frame rate label"))
                     VStack(alignment: .leading, spacing: 8) {
@@ -521,7 +523,7 @@ struct HomeView: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .frame(width: 200)
+                        .frame(alignment:.leading)
 
                         if selectedFrameRate == .custom {
                             HStack(spacing: 8) {
@@ -548,7 +550,7 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 200)
+                    .frame(alignment: .leading)
                 }
 
                 GridRow {
@@ -559,7 +561,7 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 200)
+                    .frame(alignment: .leading)
                 }
 
                 GridRow {
@@ -570,7 +572,7 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 200)
+                    .frame(alignment: .leading)
                     .onChange(of: selectedPreset) { newPreset in
                         settingsManager.currentPreset = newPreset
                     }
@@ -1259,6 +1261,7 @@ struct SRTConverterInputView: View {
             Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
                 GridRow {
                     Text(String(localized: "SRT File:", comment: "SRT file label"))
+                        .gridColumnAlignment(.trailing)
                     HStack {
                         Button(action: {
                             let panel = NSOpenPanel()
@@ -1281,6 +1284,7 @@ struct SRTConverterInputView: View {
                             Text(fileName)
                         }
                     }
+                    .gridColumnAlignment(.leading)
                 }
 
                 GridRow {
@@ -1299,7 +1303,7 @@ struct SRTConverterInputView: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .frame(width: 200)
+                        .frame(alignment: .leading)
 
                         if selectedFrameRate == .custom {
                             HStack(spacing: 8) {
@@ -1327,7 +1331,7 @@ struct SRTConverterInputView: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
-                        .frame(width: 200)
+                        .frame(alignment: .leading)
 
                         if selectedResolution == .custom {
                             HStack(spacing: 8) {
@@ -1357,7 +1361,7 @@ struct SRTConverterInputView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 200)
+                    .frame(alignment: .leading)
                 }
 
                 GridRow {

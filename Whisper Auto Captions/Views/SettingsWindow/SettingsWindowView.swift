@@ -15,6 +15,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case performance = "Performance"
     case output = "Output"
     case advanced = "Advanced"
+    case aiAssistant = "AI Assistant"
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .performance: return "bolt.fill"
         case .output: return "doc.text.fill"
         case .advanced: return "gearshape.2.fill"
+        case .aiAssistant: return "wand.and.stars"
         }
     }
 
@@ -37,6 +39,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
             return String(localized: "Output", comment: "Output settings section")
         case .advanced:
             return String(localized: "Advanced", comment: "Advanced settings section")
+        case .aiAssistant:
+            return String(localized: "AI Assistant", comment: "AI Assistant settings section")
         }
     }
 }
@@ -101,6 +105,8 @@ struct SettingsWindowView: View {
             OutputSettingsView(settings: $settingsManager.settings)
         case .advanced:
             AdvancedSettingsView(settings: $settingsManager.settings)
+        case .aiAssistant:
+            AIAssistantSettingsView(settings: $settingsManager.settings)
         }
     }
 

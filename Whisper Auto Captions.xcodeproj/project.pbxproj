@@ -30,6 +30,10 @@
 		E1A0B10D2B0100010001AAAD /* OutputSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */; };
 		E1A0B10E2B0100010001AAAE /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */; };
 		E1A0B10F2B0100010001AAAF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E1A0B11F2B0100010001AAAF /* Localizable.xcstrings */; };
+		E1A0B1202B0100010001AAB0 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1302B0100010001AAC0 /* KeychainService.swift */; };
+		E1A0B1272B0100010001AAB7 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1312B0100010001AAC1 /* GeminiService.swift */; };
+		E1A0B1282B0100010001AAB8 /* GeminiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1322B0100010001AAC2 /* GeminiModels.swift */; };
+		E1A0B1292B0100010001AAB9 /* AIAssistantSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1332B0100010001AAC3 /* AIAssistantSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +61,10 @@
 		E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputSettingsView.swift; sourceTree = "<group>"; };
 		E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		E1A0B11F2B0100010001AAAF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E1A0B1302B0100010001AAC0 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		E1A0B1312B0100010001AAC1 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+		E1A0B1322B0100010001AAC2 /* GeminiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiModels.swift; sourceTree = "<group>"; };
+		E1A0B1332B0100010001AAC3 /* AIAssistantSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +130,7 @@
 				E1A0B1112B0100010001AAA1 /* WhisperSettings.swift */,
 				E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */,
 				E1A0B1132B0100010001AAA3 /* LanguageData.swift */,
+				E1A0B1322B0100010001AAC2 /* GeminiModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -141,6 +150,8 @@
 				E1A0B1162B0100010001AAA6 /* AudioService.swift */,
 				E1A0B1172B0100010001AAA7 /* SRTService.swift */,
 				E1A0B1182B0100010001AAA8 /* DownloadService.swift */,
+				E1A0B1302B0100010001AAC0 /* KeychainService.swift */,
+				E1A0B1312B0100010001AAC1 /* GeminiService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -169,6 +180,7 @@
 				E1A0B11C2B0100010001AAAC /* PerformanceSettingsView.swift */,
 				E1A0B11D2B0100010001AAAD /* OutputSettingsView.swift */,
 				E1A0B11E2B0100010001AAAE /* AdvancedSettingsView.swift */,
+				E1A0B1332B0100010001AAC3 /* AIAssistantSettingsView.swift */,
 			);
 			path = SettingsWindow;
 			sourceTree = "<group>";
@@ -268,6 +280,10 @@
 				E1A0B10C2B0100010001AAAC /* PerformanceSettingsView.swift in Sources */,
 				E1A0B10D2B0100010001AAAD /* OutputSettingsView.swift in Sources */,
 				E1A0B10E2B0100010001AAAE /* AdvancedSettingsView.swift in Sources */,
+				E1A0B1202B0100010001AAB0 /* KeychainService.swift in Sources */,
+				E1A0B1272B0100010001AAB7 /* GeminiService.swift in Sources */,
+				E1A0B1282B0100010001AAB8 /* GeminiModels.swift in Sources */,
+				E1A0B1292B0100010001AAB9 /* AIAssistantSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
