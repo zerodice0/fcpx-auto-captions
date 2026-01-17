@@ -1,0 +1,8 @@
+# Claude Code local settings (individual session permissions)
+.claude/settings.local.json
+
+# Serena plugin local data
+.serena/
+
+# macOS
+.DS_Store
