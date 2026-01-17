@@ -1029,25 +1029,27 @@ struct SRTConverterView: View {
     let languages = ["Arabic", "Azerbaijani", "Armenian", "Albanian", "Afrikaans", "Amharic", "Assamese", "Bulgarian", "Bengali", "Breton", "Basque", "Bosnian", "Belarusian", "Bashkir", "Chinese Simplified", "Chinese Traditional", "Catalan", "Czech", "Croatian", "Dutch", "Danish", "English", "Estonian", "French", "Finnish", "Faroese", "German", "Greek", "Galician", "Georgian", "Gujarati", "Hindi", "Hebrew", "Hungarian", "Haitian creole", "Hawaiian", "Hausa", "Italian", "Indonesian", "Icelandic", "Japanese", "Javanese", "Korean", "Kannada", "Kazakh", "Khmer", "Lithuanian", "Latin", "Latvian", "Lao", "Luxembourgish", "Lingala", "Malay", "Maori", "Malayalam", "Macedonian", "Mongolian", "Marathi", "Maltese", "Myanmar", "Malagasy", "Norwegian", "Nepali", "Nynorsk", "Occitan", "Portuguese", "Polish", "Persian", "Punjabi", "Pashto", "Russian", "Romanian", "Spanish", "Swedish", "Slovak", "Serbian", "Slovenian", "Swahili", "Sinhala", "Shona", "Somali", "Sindhi", "Sanskrit", "Sundanese", "Turkish", "Tamil", "Thai", "Telugu", "Tajik", "Turkmen", "Tibetan", "Tagalog", "Tatar", "Ukrainian", "Urdu", "Uzbek", "Vietnamese", "Welsh", "Yoruba", "Yiddish"]
 
     var body: some View {
-        if conversionComplete {
-            SRTConverterResultView(
-                projectName: projectName,
-                outputFCPXMLFilePath: $outputFCPXMLFilePath,
-                conversionComplete: $conversionComplete,
-                srtFileURL: $srtFileURL,
-                fps: $fps,
-                selectedLanguage: $selectedLanguage
-            )
-        } else {
-            SRTConverterInputView(
-                srtFileURL: $srtFileURL,
-                fps: $fps,
-                selectedLanguage: $selectedLanguage,
-                projectName: $projectName,
-                outputFCPXMLFilePath: $outputFCPXMLFilePath,
-                conversionComplete: $conversionComplete,
-                languages: languages
-            )
+        Group {
+            if conversionComplete {
+                SRTConverterResultView(
+                    projectName: projectName,
+                    outputFCPXMLFilePath: $outputFCPXMLFilePath,
+                    conversionComplete: $conversionComplete,
+                    srtFileURL: $srtFileURL,
+                    fps: $fps,
+                    selectedLanguage: $selectedLanguage
+                )
+            } else {
+                SRTConverterInputView(
+                    srtFileURL: $srtFileURL,
+                    fps: $fps,
+                    selectedLanguage: $selectedLanguage,
+                    projectName: $projectName,
+                    outputFCPXMLFilePath: $outputFCPXMLFilePath,
+                    conversionComplete: $conversionComplete,
+                    languages: languages
+                )
+            }
         }
 
     }

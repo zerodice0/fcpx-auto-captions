@@ -21,7 +21,15 @@ struct AdvancedSettingsView: View {
             Section {
                 // Prompt
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "Initial Prompt:", comment: "Prompt label"))
+                    HStack {
+                        Text(String(localized: "Initial Prompt:", comment: "Prompt label"))
+                        Spacer()
+                        InfoButton(
+                            title: "info.prompt.title",
+                            description: "info.prompt.description",
+                            recommendation: nil
+                        )
+                    }
                     TextEditor(text: $settings.prompt)
                         .font(.system(.body, design: .monospaced))
                         .frame(height: 80)
@@ -29,9 +37,6 @@ struct AdvancedSettingsView: View {
                             RoundedRectangle(cornerRadius: 4)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
-                    Text(String(localized: "Guide transcription with context or vocabulary hints", comment: "Prompt description"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
             } header: {
                 Text(String(localized: "Prompt", comment: "Prompt section header"))
@@ -45,9 +50,12 @@ struct AdvancedSettingsView: View {
                     TextField("", value: $settings.noSpeechThreshold, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "Default: 0.6", comment: "No speech default"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.nospeech.title",
+                        description: "info.nospeech.description",
+                        recommendation: "info.nospeech.recommendation"
+                    )
                 }
 
                 // Word Threshold
@@ -57,9 +65,12 @@ struct AdvancedSettingsView: View {
                     TextField("", value: $settings.wordThreshold, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
-                    Text(String(localized: "Default: 0.01", comment: "Word threshold default"))
-                        .foregroundColor(.secondary)
-                        .font(.caption)
+                    Spacer()
+                    InfoButton(
+                        title: "info.wordthreshold.title",
+                        description: "info.wordthreshold.description",
+                        recommendation: "info.wordthreshold.recommendation"
+                    )
                 }
             } header: {
                 Text(String(localized: "Detection Thresholds", comment: "Detection section header"))
@@ -67,23 +78,27 @@ struct AdvancedSettingsView: View {
 
             Section {
                 // Diarize
-                Toggle(isOn: $settings.diarize) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.diarize) {
                         Text(String(localized: "Speaker Diarization", comment: "Diarize toggle label"))
-                        Text(String(localized: "Identify and label different speakers", comment: "Diarize description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.diarize.title",
+                        description: "info.diarize.description",
+                        recommendation: "info.diarize.recommendation"
+                    )
                 }
 
                 // Tiny Diarize
-                Toggle(isOn: $settings.tinyDiarize) {
-                    VStack(alignment: .leading) {
+                HStack {
+                    Toggle(isOn: $settings.tinyDiarize) {
                         Text(String(localized: "Tiny Diarization (Experimental)", comment: "Tiny diarize toggle label"))
-                        Text(String(localized: "Lightweight speaker diarization for smaller models", comment: "Tiny diarize description"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
+                    InfoButton(
+                        title: "info.tinydiarize.title",
+                        description: "info.tinydiarize.description",
+                        recommendation: "info.tinydiarize.recommendation"
+                    )
                 }
                 .disabled(!settings.diarize)
             } header: {
