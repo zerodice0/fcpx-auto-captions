@@ -85,8 +85,6 @@ struct PerformanceSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }

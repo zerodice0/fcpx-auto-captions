@@ -86,9 +86,7 @@ struct SettingsWindowView: View {
             .frame(minWidth: 400, minHeight: 400)
         }
         .frame(minWidth: 600, minHeight: 500)
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 
     // MARK: - Settings Content

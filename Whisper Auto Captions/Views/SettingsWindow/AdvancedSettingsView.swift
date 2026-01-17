@@ -103,8 +103,6 @@ struct AdvancedSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }

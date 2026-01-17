@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 
 /// Manages WhisperSettings persistence using AppStorage
-@MainActor
 class SettingsManager: ObservableObject {
     // MARK: - Singleton
     static let shared = SettingsManager()
