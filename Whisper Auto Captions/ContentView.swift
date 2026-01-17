@@ -2,42 +2,284 @@ import SwiftUI
 import Foundation
 import AVFoundation
 
-class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-    var model: String
-    var progressHandler: ((Double) -> Void)?
-    var completionHandler: (() -> Void)?
-    var cancelAction: (() -> Void)? // 添加取消操作的闭包
-
-    init(model: String, progressHandler: ((Double) -> Void)? = nil, completionHandler: (() -> Void)? = nil) {
-        self.model = model
-        self.progressHandler = progressHandler
-        self.completionHandler = completionHandler
+// MARK: - SRT Converter Utilities
+struct SRTConverter {
+    static func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
+        // convert srt time to ms
+        let ms = Int(srtTime.suffix(3))!
+        let timeComponents = srtTime.prefix(srtTime.count - 4).split(separator: ":")
+        let srtTimeMs = (Int(timeComponents[0])! * 3600 + Int(timeComponents[1])! * 60 + Int(timeComponents[2])!) * 1000 + ms
+        // convert ms to frame
+        let frame = Int(floor(Float(srtTimeMs) / (1000 / fps)))
+        return frame
     }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        let fileManager = FileManager.default
-        let applicationSupportDirectory = try! fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-        let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(model.lowercased()).bin")
-
-        // Move the downloaded file to the destination URL
-        do {
-            try fileManager.moveItem(at: location, to: destinationURL)
-            print("File downloaded and moved to: \(destinationURL.path)")
-            completionHandler?()
-        } catch {
-            try? fileManager.removeItem(at: location)
+    static func formatText(fullText: String) -> String {
+        let words = fullText.split(separator: " ")
+        var lines = [String]()
+        for i in stride(from: 0, to: words.count, by: 16) {
+            let endIndex = min(i + 16, words.count)
+            let line = words[i..<endIndex].joined(separator: " ")
+            lines.append(line)
         }
+        let formattedText = lines.joined(separator: "\n")
+        return formattedText
     }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        progressHandler?(progress)
+    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String) -> String {
+        do {
+            let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
+            let subtitles: [String] = srtContent.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n\n")
+
+            // extract total duration from srt
+            let lastSubtitle = subtitles.last!
+            let totalSrtTime = lastSubtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")[1].components(separatedBy: " --> ")[1]
+            let totalFrame = srtTimeToFrame(srtTime: totalSrtTime, fps: Float(fps))
+            let hundredFoldTotalFrame = String(100 * totalFrame)
+            let hundredFoldFps = String(Int(fps * 100))
+
+            // fcpxml
+            let fcpxmlElement = XMLElement(name: "fcpxml")
+            fcpxmlElement.addAttribute(XMLNode.attribute(withName: "version", stringValue: "1.9") as! XMLNode)
+
+            // resource
+            let resourcesElement = XMLElement(name: "resources")
+
+            // format
+            let formatElement = XMLElement(name: "format")
+            formatElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r1") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "FFVideoFormat1080p\(hundredFoldFps)") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "frameDuration", stringValue: "100/\(hundredFoldFps)s") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "width", stringValue: "1920") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "height", stringValue: "1080") as! XMLNode)
+            formatElement.addAttribute(XMLNode.attribute(withName: "colorSpace", stringValue: "1-1-1 (Rec. 709)") as! XMLNode)
+            resourcesElement.addChild(formatElement)
+
+            // effect
+            let effectElement = XMLElement(name: "effect")
+            effectElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r2") as! XMLNode)
+            effectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Basic Title") as! XMLNode)
+            effectElement.addAttribute(XMLNode.attribute(withName: "uid", stringValue: ".../Titles.localized/Bumper:Opener.localized/Basic Title.localized/Basic Title.moti") as! XMLNode)
+            resourcesElement.addChild(effectElement)
+
+            // library
+            let libraryElement = XMLElement(name: "library")
+
+            // event
+            let eventElement = XMLElement(name: "event")
+            eventElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Whisper Auto Captions") as! XMLNode)
+            libraryElement.addChild(eventElement)
+
+            // project
+            let projectElement = XMLElement(name: "project")
+            projectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(projectName)") as! XMLNode)
+            eventElement.addChild(projectElement)
+
+            // sequence
+            let sequenceElement = XMLElement(name: "sequence")
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "format", stringValue: "r1") as! XMLNode)
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcFormat", stringValue: "NDF") as! XMLNode)
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioLayout", stringValue: "stereo") as! XMLNode)
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioRate", stringValue: "48k") as! XMLNode)
+            sequenceElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(totalFrame)/\(hundredFoldFps)s") as! XMLNode)
+            projectElement.addChild(sequenceElement)
+
+            // spine
+            let spineElement = XMLElement(name: "spine")
+            sequenceElement.addChild(spineElement)
+
+            // gap
+            let gapElement = XMLElement(name: "gap")
+            gapElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Gap") as! XMLNode)
+            gapElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "0s") as! XMLNode)
+            gapElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldTotalFrame)/\(hundredFoldFps)s") as! XMLNode)
+            spineElement.addChild(gapElement)
+
+            for (i, subtitle) in subtitles.enumerated() {
+                let subtitleItem = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
+                let timeRange = subtitleItem[1].components(separatedBy: " --> ")
+
+                let offset = timeRange[0]
+                let end = timeRange[1]
+                let offsetFrame = srtTimeToFrame(srtTime: offset, fps: fps)
+                let endFrame = srtTimeToFrame(srtTime: end, fps: fps)
+                let durationFrame = endFrame - offsetFrame
+
+                let hundredFoldOffsetFrame = String(100 * offsetFrame)
+                let hundredFoldDurationFrame = String(100 * durationFrame)
+                var subtitleContent = subtitleItem[2]
+                if language == "English" {
+                    if subtitleContent.split(separator: " ").count > 16 {
+                        subtitleContent = formatText(fullText: subtitleContent)
+                    }
+                }
+
+                if language == "Chinese" {
+                    // title
+                    let titleElement = XMLElement(name: "title")
+                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundredFoldOffsetFrame)/\(hundredFoldFps)s") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitleContent) - Basic Title") as! XMLNode)
+
+                    // param1
+                    let param1Element = XMLElement(name: "param")
+                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
+                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
+                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
+                    titleElement.addChild(param1Element)
+
+                    // param2
+                    let param2Element = XMLElement(name: "param")
+                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
+                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
+                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
+                    titleElement.addChild(param2Element)
+
+                    // param3
+                    let param3Element = XMLElement(name: "param")
+                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
+                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
+                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
+                    titleElement.addChild(param3Element)
+
+                    // text
+                    let textElement = XMLElement(name: "text")
+                    titleElement.addChild(textElement)
+
+                    // text style
+                    let textStyleElement = XMLElement(name: "text-style")
+                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
+                    textStyleElement.stringValue = subtitleContent
+                    textElement.addChild(textStyleElement)
+
+                    // text style def
+                    let textStyleDefElement = XMLElement(name: "text-style-def")
+                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
+                    titleElement.addChild(textStyleDefElement)
+
+                    // text style 2
+                    let textStyle2Element = XMLElement(name: "text-style")
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "PingFang SC") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "50") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Semibold") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "bold", stringValue: "1") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
+                    textStyleDefElement.addChild(textStyle2Element)
+
+                    gapElement.addChild(titleElement)
+
+                } else {
+                    // title
+                    let titleElement = XMLElement(name: "title")
+                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundredFoldOffsetFrame)/\(hundredFoldFps)s") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s") as! XMLNode)
+                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitleContent) - Basic Title") as! XMLNode)
+
+                    // param1
+                    let param1Element = XMLElement(name: "param")
+                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
+                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
+                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
+                    titleElement.addChild(param1Element)
+
+                    // param2
+                    let param2Element = XMLElement(name: "param")
+                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
+                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
+                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
+                    titleElement.addChild(param2Element)
+
+                    // param3
+                    let param3Element = XMLElement(name: "param")
+                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
+                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
+                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
+                    titleElement.addChild(param3Element)
+
+                    // text
+                    let textElement = XMLElement(name: "text")
+                    titleElement.addChild(textElement)
+
+                    // text style
+                    let textStyleElement = XMLElement(name: "text-style")
+                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
+                    textStyleElement.stringValue = subtitleContent
+                    textElement.addChild(textStyleElement)
+
+                    // text style def
+                    let textStyleDefElement = XMLElement(name: "text-style-def")
+                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
+                    titleElement.addChild(textStyleDefElement)
+
+                    // text style 2
+                    let textStyle2Element = XMLElement(name: "text-style")
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "Helvetica") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "45") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Regular") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
+                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
+                    textStyleDefElement.addChild(textStyle2Element)
+
+                    gapElement.addChild(titleElement)
+                }
+            }
+
+            // Add the resources and library elements to the fcpxml element
+            fcpxmlElement.addChild(resourcesElement)
+            fcpxmlElement.addChild(libraryElement)
+
+            // Create the XML document with the fcpxml element as the root
+            let xmlDoc = XMLDocument(rootElement: fcpxmlElement)
+
+            // Set the XML document version and encoding
+            xmlDoc.version = "1.0"
+            xmlDoc.characterEncoding = "utf-8"
+
+            // Write the XML document to the output file
+            let xmlData = xmlDoc.xmlData(options: .nodePrettyPrint)
+            let fileUrl = URL(fileURLWithPath: srtPath + ".fcpxml")
+            try! xmlData.write(to: fileUrl)
+            return srtPath + ".fcpxml"
+        } catch {
+            return "Error"
+        }
     }
 }
 
-
+// MARK: - Main Content View with Tabs
 struct ContentView: View {
+    @State private var selectedTab = 0
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            TranscriptionTab()
+                .tabItem {
+                    Label("Transcription", systemImage: "waveform")
+                }
+                .tag(0)
+
+            SRTConverterView()
+                .tabItem {
+                    Label("SRT Converter", systemImage: "doc.text")
+                }
+                .tag(1)
+        }
+        .frame(minWidth: 600, minHeight: 600)
+    }
+}
+
+// MARK: - Transcription Tab (Original Functionality)
+struct TranscriptionTab: View {
     @State var startCreatingAutoCaptions = false
     @State var progress = 0.0
     @State var progressPercentage = 0
@@ -49,11 +291,12 @@ struct ContentView: View {
     @State var outputCaptions = ""
     @State var outputSRTFilePath = ""
     @State var outputFCPXMLFilePath = ""
+
     var body: some View {
         if startCreatingAutoCaptions {
-            ProcessView(progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath,isPresented: $startCreatingAutoCaptions).frame(minWidth: 600, minHeight: 600)
+            ProcessView(progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath, isPresented: $startCreatingAutoCaptions)
         } else {
-            HomeView(startCreatingAutoCaptions: $startCreatingAutoCaptions, progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath).frame(minWidth: 600, minHeight: 600)
+            HomeView(startCreatingAutoCaptions: $startCreatingAutoCaptions, progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath)
         }
     }
 }
@@ -248,7 +491,7 @@ struct HomeView: View {
                 let outputSRTFilePath = merge_srt(srt_files: srtFiles)
                 // srt to fcpxml
                 self.status = "Done"
-                self.outputFCPXMLFilePath = srt_to_fcpxml(srt_path: outputSRTFilePath, fps: Float(fps)!, project_name: projectName, language: selectedLanguage)
+                self.outputFCPXMLFilePath = SRTConverter.srtToFCPXML(srtPath: outputSRTFilePath, fps: Float(fps)!, projectName: projectName, language: selectedLanguage)
 
                 self.outputSRTFilePath = outputSRTFilePath
             }
@@ -409,11 +652,11 @@ struct HomeView: View {
             let modelPath = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(selectedModel.lowercased()).bin")
             
             
-            if let mainPath = Bundle.main.path(forResource: "main", ofType: nil),
+            if let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil),
                let selectedLanguageShortCut = languagesMapping[selectedLanguage]
             {
                 let task = Process()
-                task.launchPath = mainPath
+                task.launchPath = whisperCliPath
                 if selectedLanguageShortCut != "zh" {
                     task.arguments = ["-m", modelPath.path, "-l", selectedLanguageShortCut, "-pp", "-osrt", "-f", outputWavFilePath]
                 } else {
@@ -496,272 +739,7 @@ struct HomeView: View {
                 completion(srtFilePath)
             }
         }
-    
-    
-    func format_text(full_text: String) -> String {
-        let words = full_text.split(separator: " ")
-        var lines = [String]()
-        for i in stride(from: 0, to: words.count, by: 16) {
-            let endIndex = min(i + 16, words.count)
-            let line = words[i..<endIndex].joined(separator: " ")
-            lines.append(line)
-        }
-        let formatted_text = lines.joined(separator: "\n")
-        return formatted_text
-    }
 
-
-    func srt_time_to_frame(srt_time: String, fps: Float) -> Int {
-        // convert srt time to ms
-        let ms = Int(srt_time.suffix(3))!
-        let time_components = srt_time.prefix(srt_time.count - 4).split(separator: ":")
-        let srt_time_ms = (Int(time_components[0])! * 3600 + Int(time_components[1])! * 60 + Int(time_components[2])!) * 1000 + ms
-        // convert ms to frame
-        let frame = Int(floor(Float(srt_time_ms) / (1000 / fps)))
-        return frame
-    }
-
-
-
-    func srt_to_fcpxml(srt_path: String, fps: Float, project_name: String, language: String) -> String  {
-        do {
-            let srt_content = try String(contentsOfFile: srt_path, encoding: .utf8)
-            let subtitles: [String] = srt_content.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n\n")
-            
-            // ectract total duratioin from srt
-            let last_subtitle = subtitles.last!
-            let total_srt_time = last_subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")[1].components(separatedBy: " --> ")[1]
-            let total_frame = srt_time_to_frame(srt_time: total_srt_time, fps: Float(fps));
-            let hundred_fold_total_frame = String(100 * total_frame)
-            let hundred_fold_fps = String(Int(fps * 100))
-
-            // fcpxml
-            let fcpxmlElement = XMLElement(name: "fcpxml")
-            fcpxmlElement.addAttribute(XMLNode.attribute(withName: "version", stringValue: "1.9") as! XMLNode)
-
-            // resource
-            let resourcesElement = XMLElement(name: "resources")
-
-            // format
-            let formatElement = XMLElement(name: "format")
-            formatElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r1") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "FFVideoFormat1080p\(hundred_fold_fps)") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "frameDuration", stringValue: "100/\(hundred_fold_fps)s") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "width", stringValue: "1920") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "height", stringValue: "1080") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "colorSpace", stringValue: "1-1-1 (Rec. 709)") as! XMLNode)
-            resourcesElement.addChild(formatElement)
-
-            // effect
-            let effectElement = XMLElement(name: "effect")
-            effectElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r2") as! XMLNode)
-            effectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Basic Title") as! XMLNode)
-            effectElement.addAttribute(XMLNode.attribute(withName: "uid", stringValue: ".../Titles.localized/Bumper:Opener.localized/Basic Title.localized/Basic Title.moti") as! XMLNode)
-            resourcesElement.addChild(effectElement)
-
-
-            // library
-            let libraryElement = XMLElement(name: "library")
-
-
-            // event
-            let eventElement = XMLElement(name: "event")
-            eventElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Whisper Auto Captions") as! XMLNode)
-            libraryElement.addChild(eventElement)
-
-            // project
-            let projectElement = XMLElement(name: "project")
-            projectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(project_name)") as! XMLNode)
-            eventElement.addChild(projectElement)
-
-            // sequence
-            let sequenceElement = XMLElement(name: "sequence")
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "format", stringValue: "r1") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcFormat", stringValue: "NDF") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioLayout", stringValue: "stereo") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioRate", stringValue: "48k") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(total_frame)/\(hundred_fold_fps)s") as! XMLNode)
-            projectElement.addChild(sequenceElement)
-
-
-            // spine
-            let spineElement = XMLElement(name: "spine")
-            sequenceElement.addChild(spineElement)
-
-            // gap
-            let gapElement = XMLElement(name: "gap")
-            gapElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Gap") as! XMLNode)
-            gapElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "0s") as! XMLNode)
-            gapElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundred_fold_total_frame)/\(hundred_fold_fps)s") as! XMLNode)
-            spineElement.addChild(gapElement)
-
-
-            for (i, subtitle) in subtitles.enumerated() {
-                let subtitle_item = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
-                let time_range = subtitle_item[1].components(separatedBy: " --> ")
-
-                let offset = time_range[0]
-                let end = time_range[1]
-                let offset_frame = srt_time_to_frame(srt_time: offset, fps: fps)
-                let end_frame = srt_time_to_frame(srt_time: end, fps: fps)
-                let duration_frame = end_frame - offset_frame
-
-                let hundred_fold_offset_frame = String(100 * offset_frame)
-                let hundred_fold_duration_frame = String(100 * duration_frame)
-                var subtitle_content = subtitle_item[2]
-                if language == "English" {
-                    if subtitle_content.split(separator: " ").count > 16 {
-                        subtitle_content = format_text(full_text: subtitle_content)
-                        }
-                    }
-                
-     
-                if language == "Chinese" {
-                    // title
-                    let titleElement = XMLElement(name: "title")
-                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundred_fold_offset_frame)/\(hundred_fold_fps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundred_fold_duration_frame)/\(hundred_fold_fps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitle_content) - Basic Title") as! XMLNode)
-
-                    // param1
-                    let param1Element = XMLElement(name: "param")
-                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
-                    titleElement.addChild(param1Element)
-
-                    // param2
-                    let param2Element = XMLElement(name: "param")
-                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
-                    titleElement.addChild(param2Element)
-
-                    // param3
-                    let param3Element = XMLElement(name: "param")
-                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
-                    titleElement.addChild(param3Element)
-
-                    // text
-                    let textElement = XMLElement(name: "text")
-                    titleElement.addChild(textElement)
-
-                    // text style
-                    let textStyleElement = XMLElement(name: "text-style")
-                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
-                    textStyleElement.stringValue = subtitle_content
-                    textElement.addChild(textStyleElement)
-
-
-                    // text style def
-                    let textStyleDefElement = XMLElement(name: "text-style-def")
-                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
-                    titleElement.addChild(textStyleDefElement)
-
-                    // text style 2
-                    let textStyle2Element = XMLElement(name: "text-style")
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "PingFang SC") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "50") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Semibold") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "bold", stringValue: "1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
-                    textStyleDefElement.addChild(textStyle2Element)
-
-                    gapElement.addChild(titleElement)
-
-                } else {
-                    // title
-                    let titleElement = XMLElement(name: "title")
-                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundred_fold_offset_frame)/\(hundred_fold_fps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundred_fold_duration_frame)/\(hundred_fold_fps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitle_content) - Basic Title") as! XMLNode)
-
-                    // param1
-                    let param1Element = XMLElement(name: "param")
-                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
-                    titleElement.addChild(param1Element)
-
-                    // param2
-                    let param2Element = XMLElement(name: "param")
-                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
-                    titleElement.addChild(param2Element)
-
-                    // param3
-                    let param3Element = XMLElement(name: "param")
-                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
-                    titleElement.addChild(param3Element)
-
-                    // text
-                    let textElement = XMLElement(name: "text")
-                    titleElement.addChild(textElement)
-
-                    // text style
-                    let textStyleElement = XMLElement(name: "text-style")
-                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
-                    textStyleElement.stringValue = subtitle_content
-                    textElement.addChild(textStyleElement)
-
-
-                    // text style def
-                    let textStyleDefElement = XMLElement(name: "text-style-def")
-                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
-                    titleElement.addChild(textStyleDefElement)
-
-                    // text style 2
-                    let textStyle2Element = XMLElement(name: "text-style")
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "Helvetica") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "45") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Regular") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
-                    textStyleDefElement.addChild(textStyle2Element)
-
-                    gapElement.addChild(titleElement)
-
-                }
-            }
-
-            // Add the resources and library elements to the fcpxml element
-            fcpxmlElement.addChild(resourcesElement)
-            fcpxmlElement.addChild(libraryElement)
-
-            // Create the XML document with the fcpxml element as the root
-            let xmlDoc = XMLDocument(rootElement: fcpxmlElement)
-
-            // Set the XML document version and encoding
-            xmlDoc.version = "1.0"
-            xmlDoc.characterEncoding = "utf-8"
-
-            // Write the XML document to the output file
-            let xmlData = xmlDoc.xmlData(options: .nodePrettyPrint)
-            let fileUrl = URL(fileURLWithPath: srt_path + ".fcpxml")
-            try! xmlData.write(to: fileUrl)
-            return srt_path + ".fcpxml"
-        }
-        
-        catch {
-//            print("Error: \(error)")
-            return "Error "
-        }
-    }
     func formatSeconds(_ seconds: Double) -> String {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute, .second]
@@ -992,6 +970,262 @@ struct ProcessView: View {
         task.resume()
     }
 
+}
+
+// MARK: - SRT Converter Views
+struct SRTConverterView: View {
+    @State private var srtFileURL: URL?
+    @State private var fps: String = ""
+    @State private var selectedLanguage = "English"
+    @State private var projectName = ""
+    @State private var outputFCPXMLFilePath = ""
+    @State private var conversionComplete = false
+
+    let languages = ["Arabic", "Azerbaijani", "Armenian", "Albanian", "Afrikaans", "Amharic", "Assamese", "Bulgarian", "Bengali", "Breton", "Basque", "Bosnian", "Belarusian", "Bashkir", "Chinese Simplified", "Chinese Traditional", "Catalan", "Czech", "Croatian", "Dutch", "Danish", "English", "Estonian", "French", "Finnish", "Faroese", "German", "Greek", "Galician", "Georgian", "Gujarati", "Hindi", "Hebrew", "Hungarian", "Haitian creole", "Hawaiian", "Hausa", "Italian", "Indonesian", "Icelandic", "Japanese", "Javanese", "Korean", "Kannada", "Kazakh", "Khmer", "Lithuanian", "Latin", "Latvian", "Lao", "Luxembourgish", "Lingala", "Malay", "Maori", "Malayalam", "Macedonian", "Mongolian", "Marathi", "Maltese", "Myanmar", "Malagasy", "Norwegian", "Nepali", "Nynorsk", "Occitan", "Portuguese", "Polish", "Persian", "Punjabi", "Pashto", "Russian", "Romanian", "Spanish", "Swedish", "Slovak", "Serbian", "Slovenian", "Swahili", "Sinhala", "Shona", "Somali", "Sindhi", "Sanskrit", "Sundanese", "Turkish", "Tamil", "Thai", "Telugu", "Tajik", "Turkmen", "Tibetan", "Tagalog", "Tatar", "Ukrainian", "Urdu", "Uzbek", "Vietnamese", "Welsh", "Yoruba", "Yiddish"]
+
+    var body: some View {
+        if conversionComplete {
+            SRTConverterResultView(
+                projectName: projectName,
+                outputFCPXMLFilePath: $outputFCPXMLFilePath,
+                conversionComplete: $conversionComplete,
+                srtFileURL: $srtFileURL,
+                fps: $fps,
+                selectedLanguage: $selectedLanguage
+            )
+        } else {
+            SRTConverterInputView(
+                srtFileURL: $srtFileURL,
+                fps: $fps,
+                selectedLanguage: $selectedLanguage,
+                projectName: $projectName,
+                outputFCPXMLFilePath: $outputFCPXMLFilePath,
+                conversionComplete: $conversionComplete,
+                languages: languages
+            )
+        }
+    }
+}
+
+struct SRTConverterInputView: View {
+    @Binding var srtFileURL: URL?
+    @Binding var fps: String
+    @Binding var selectedLanguage: String
+    @Binding var projectName: String
+    @Binding var outputFCPXMLFilePath: String
+    @Binding var conversionComplete: Bool
+    let languages: [String]
+
+    @State private var fileName: String = ""
+
+    var body: some View {
+        VStack {
+            Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
+                GridRow {
+                    Text("SRT File:")
+                    HStack {
+                        Button(action: {
+                            let panel = NSOpenPanel()
+                            panel.canChooseFiles = true
+                            panel.canChooseDirectories = false
+                            panel.allowsMultipleSelection = false
+                            panel.allowedContentTypes = [.init(filenameExtension: "srt")!]
+                            if panel.runModal() == .OK {
+                                self.srtFileURL = panel.urls.first
+                                if let url = panel.urls.first {
+                                    self.fileName = url.lastPathComponent
+                                    self.projectName = url.deletingPathExtension().lastPathComponent
+                                }
+                            }
+                        }) {
+                            Text("Choose File")
+                        }
+
+                        if srtFileURL != nil {
+                            Text(fileName)
+                        }
+                    }
+                }
+
+                GridRow {
+                    Text("Project Name:")
+                    TextField("Project name for FCPXML", text: $projectName)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 200)
+                }
+
+                GridRow {
+                    Text("Frame Rate:")
+                    TextField("eg: 30, 29.97", text: $fps)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 100)
+                }
+
+                GridRow {
+                    Text("Language:")
+                    Picker(selection: $selectedLanguage, label: EmptyView()) {
+                        ForEach(languages, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 150)
+                }
+
+                GridRow {
+                    Button(action: {
+                        convertSRTtoFCPXML()
+                    }, label: {
+                        Text("Convert to FCPXML")
+                    })
+                    .buttonStyle(BorderedProminentButtonStyle())
+                    .gridCellAnchor(.center)
+                    .disabled(srtFileURL == nil || fps.isEmpty || projectName.isEmpty)
+                }.gridCellColumns(2)
+            }
+            .padding()
+        }
+    }
+
+    private func convertSRTtoFCPXML() {
+        guard let srtURL = srtFileURL,
+              let fpsValue = Float(fps) else { return }
+
+        let srtPath = srtURL.path
+        outputFCPXMLFilePath = SRTConverter.srtToFCPXML(
+            srtPath: srtPath,
+            fps: fpsValue,
+            projectName: projectName,
+            language: selectedLanguage
+        )
+
+        if outputFCPXMLFilePath != "Error" {
+            conversionComplete = true
+        }
+    }
+}
+
+struct SRTConverterResultView: View {
+    let projectName: String
+    @Binding var outputFCPXMLFilePath: String
+    @Binding var conversionComplete: Bool
+    @Binding var srtFileURL: URL?
+    @Binding var fps: String
+    @Binding var selectedLanguage: String
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.circle.fill")
+                .resizable()
+                .frame(width: 60, height: 60)
+                .foregroundColor(.green)
+
+            Text("Conversion Complete!")
+                .font(.title)
+
+            Text("Project: \(projectName)")
+                .font(.title2)
+
+            HStack(spacing: 16) {
+                Button(action: {
+                    downloadFile(filePath: outputFCPXMLFilePath)
+                }) {
+                    Image(systemName: "square.and.arrow.down")
+                    Text("Download .fcpxml")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.blue)
+
+                Button(action: {
+                    backtofcpx(fcpxml_path: outputFCPXMLFilePath)
+                }) {
+                    if let imagePath = Bundle.main.path(forResource: "fcpx-icon", ofType: "png"),
+                       let nsImage = NSImage(contentsOfFile: imagePath) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: nsImage.size.width * 0.05, height: nsImage.size.height * 0.05)
+                    }
+                    Text("Open in Final Cut Pro")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.gray)
+            }
+
+            Button(action: {
+                resetState()
+            }) {
+                Image(systemName: "arrow.counterclockwise")
+                Text("Convert Another File")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
+        .padding()
+    }
+
+    private func resetState() {
+        conversionComplete = false
+        outputFCPXMLFilePath = ""
+        srtFileURL = nil
+        fps = ""
+        selectedLanguage = "English"
+    }
+
+    private func backtofcpx(fcpxml_path: String) {
+        let command =
+        """
+        tell application "Final Cut Pro"
+            launch
+            activate
+            open POSIX file "\(fcpxml_path)"
+        end tell
+        """
+        DispatchQueue.global(qos: .background).async {
+            var error: NSDictionary?
+            if let scriptObject = NSAppleScript(source: command) {
+                _ = scriptObject.executeAndReturnError(&error)
+            }
+        }
+    }
+
+    private func downloadFile(filePath: String) {
+        let fileURL = URL(fileURLWithPath: filePath)
+        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+
+        guard let destinationURL = downloadsURL?.appendingPathComponent(fileURL.lastPathComponent) else {
+            return
+        }
+
+        let fileManager = FileManager.default
+        var updatedDestinationURL = destinationURL
+
+        if fileManager.fileExists(atPath: updatedDestinationURL.path) {
+            let originalFileName = updatedDestinationURL.deletingPathExtension().lastPathComponent
+            let originalFileExtension = updatedDestinationURL.pathExtension
+
+            var counter = 1
+            while fileManager.fileExists(atPath: updatedDestinationURL.path) {
+                let newFileName = "\(originalFileName)_\(counter).\(originalFileExtension)"
+                updatedDestinationURL = updatedDestinationURL.deletingLastPathComponent().appendingPathComponent(newFileName)
+                counter += 1
+            }
+        }
+
+        let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
+            guard let location = location else { return }
+
+            do {
+                try fileManager.moveItem(at: location, to: updatedDestinationURL)
+            } catch {
+                // Handle error silently
+            }
+        }
+
+        task.resume()
+    }
 }
 
 struct ContentView_Previews: PreviewProvider {
