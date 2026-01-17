@@ -281,9 +281,7 @@ struct ContentView: View {
                 .tag(1)
         }
         .frame(minWidth: 600, minHeight: 600)
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }
 
@@ -312,9 +310,7 @@ struct TranscriptionTab: View {
                 HomeView(startCreatingAutoCaptions: $startCreatingAutoCaptions, progress: $progress, progressPercentage: $progressPercentage, totalBatch: $totalBatch, currentBatch: $currentBatch, remainingTime: $remainingTime, status: $status, outputCaptions: $outputCaptions, projectName: $projectName, outputFCPXMLFilePath: $outputFCPXMLFilePath, outputSRTFilePath: $outputSRTFilePath)
             }
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }
 
@@ -494,9 +490,7 @@ struct HomeView: View {
         .sheet(isPresented: $showSettings) {
             SettingsWindowView()
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 
     func whisper_auto_captions() {
@@ -691,8 +685,7 @@ struct HomeView: View {
         task.arguments = ["-i", filePathString, "-ar", "16000", wavFilePath]
         task.launch()
         task.waitUntilExit()
-        let status = task.terminationStatus
-//        print("Task completed with status: \(status)")
+        // Note: task.terminationStatus can be checked here if error handling is needed
         return wavFilePath
     }
     
@@ -959,9 +952,7 @@ struct ProcessView: View {
             }
         }
         .padding()
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 
     func backtofcpx(fcpxml_path: String) {
@@ -976,11 +967,7 @@ struct ProcessView: View {
         DispatchQueue.global(qos: .background).async {
             var error: NSDictionary?
             if let scriptObject = NSAppleScript(source: command) {
-                if let output = scriptObject.executeAndReturnError(&error).stringValue {
-//                    print(output)
-                } else if (error != nil) {
-//                    print("Error: \(error!)")
-                }
+                _ = scriptObject.executeAndReturnError(&error)
             }
         }
     }
@@ -1010,9 +997,6 @@ struct ProcessView: View {
 
         let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
             guard let location = location else {
-                if let error = error {
-//                    print("Download failed: \(error.localizedDescription)")
-                }
                 return
             }
                 
@@ -1065,9 +1049,7 @@ struct SRTConverterView: View {
                 languages: languages
             )
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }
 
@@ -1152,9 +1134,7 @@ struct SRTConverterInputView: View {
             }
             .padding()
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 
     private func convertSRTtoFCPXML() {
@@ -1237,9 +1217,7 @@ struct SRTConverterResultView: View {
             .controlSize(.large)
         }
         .padding()
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 
     private func resetState() {

@@ -81,8 +81,6 @@ struct OutputSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        #if DEBUG
-        .enableInjection()
-        #endif
+
     }
 }
