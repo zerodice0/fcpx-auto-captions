@@ -65,6 +65,7 @@
 		E1A0B1312B0100010001AAC1 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
 		E1A0B1322B0100010001AAC2 /* GeminiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiModels.swift; sourceTree = "<group>"; };
 		E1A0B1332B0100010001AAC3 /* AIAssistantSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantSettingsView.swift; sourceTree = "<group>"; };
+		E1A0B1402B0100010001AAD0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +99,7 @@
 		D06D32252A418DFA005F59B8 /* Whisper Auto Captions */ = {
 			isa = PBXGroup;
 			children = (
+				E1A0B1402B0100010001AAD0 /* Info.plist */,
 				E1A0B1212B0100010001AAB1 /* Models */,
 				E1A0B1222B0100010001AAB2 /* Managers */,
 				E1A0B1232B0100010001AAB3 /* Services */,
