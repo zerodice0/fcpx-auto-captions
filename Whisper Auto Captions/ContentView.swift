@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+import UniformTypeIdentifiers
 #if DEBUG
 import Inject
 #endif
@@ -116,6 +117,46 @@ enum FrameRate: String, CaseIterable, Identifiable {
 
     static func isValidFrameRate(_ value: Float) -> Bool {
         return value > 0 && value <= 120
+    }
+}
+
+// MARK: - File Utility
+struct FileUtility {
+    static func saveFileWithDialog(filePath: String) {
+        let fileURL = URL(fileURLWithPath: filePath)
+        let fileManager = FileManager.default
+
+        // Verify source file exists
+        guard fileManager.fileExists(atPath: filePath) else {
+            return
+        }
+
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = fileURL.lastPathComponent
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = String(localized: "Save File", comment: "Save panel title")
+        savePanel.message = String(localized: "Choose a location to save the file", comment: "Save panel message")
+
+        // Set allowed file type based on the file extension
+        let fileExtension = fileURL.pathExtension
+        if let contentType = UTType(filenameExtension: fileExtension) {
+            savePanel.allowedContentTypes = [contentType]
+        }
+
+        savePanel.begin { response in
+            if response == .OK, let destinationURL = savePanel.url {
+                do {
+                    // Remove existing file if it exists at destination
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+                    try fileManager.copyItem(at: fileURL, to: destinationURL)
+                } catch {
+                    // Handle error silently
+                }
+            }
+        }
     }
 }
 
@@ -1160,26 +1201,26 @@ struct ProcessView: View {
                 HStack {
                     Text("Download files: ").font(.title2)
                     Button(action: {
-                        downloadFile(filePath: outputSRTFilePath)
+                        FileUtility.saveFileWithDialog(filePath: outputSRTFilePath)
                     }) {
                         Image(systemName: "square.and.arrow.down")
                         Text("Download .srt file")
                     }.buttonStyle(.borderedProminent).controlSize(.large)
                         .tint(.purple)
                         .disabled(self.currentBatch != self.totalBatch || self.progressPercentage < 100)
-                    
+
                     Button(action: {
-                        downloadFile(filePath: outputFCPXMLFilePath)
+                        FileUtility.saveFileWithDialog(filePath: outputFCPXMLFilePath)
                     }) {
                         Image(systemName: "square.and.arrow.down")
                         Text("Download .fcpxml file")
                     }.buttonStyle(.borderedProminent).controlSize(.large)
                         .tint(.blue)
                         .disabled(self.currentBatch != self.totalBatch || self.progressPercentage < 100)
-                    
+
                     Button(action: {
-                        downloadFile(filePath: outputSRTFilePath)
-                        downloadFile(filePath: outputFCPXMLFilePath)
+                        FileUtility.saveFileWithDialog(filePath: outputSRTFilePath)
+                        FileUtility.saveFileWithDialog(filePath: outputFCPXMLFilePath)
                     }) {
                         Image(systemName: "folder.badge.plus")
                         Text("Download All")
@@ -1253,47 +1294,6 @@ struct ProcessView: View {
             }
         }
     }
-    func downloadFile(filePath: String) {
-        let fileURL = URL(fileURLWithPath: filePath)
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-
-        guard let destinationURL = downloadsURL?.appendingPathComponent(fileURL.lastPathComponent) else {
-            return
-        }
-        
-
-        let fileManager = FileManager.default
-        var updatedDestinationURL = destinationURL
-
-        if fileManager.fileExists(atPath: updatedDestinationURL.path) {
-            let originalFileName = updatedDestinationURL.deletingPathExtension().lastPathComponent
-            let originalFileExtension = updatedDestinationURL.pathExtension
-
-            var counter = 1
-            while fileManager.fileExists(atPath: updatedDestinationURL.path) {
-                let newFileName = "\(originalFileName)_\(counter).\(originalFileExtension)"
-                updatedDestinationURL = updatedDestinationURL.deletingLastPathComponent().appendingPathComponent(newFileName)
-                counter += 1
-            }
-        }
-
-        let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
-            guard let location = location else {
-                return
-            }
-                
-    
-            do {
-                try fileManager.moveItem(at: location, to: updatedDestinationURL)
-//                print("Download completed")
-            } catch {
-//                print("Failed to move downloaded file: \(error.localizedDescription)")
-            }
-        }
-
-        task.resume()
-    }
-
 }
 
 // MARK: - SRT Converter Views
@@ -1560,7 +1560,7 @@ struct SRTConverterResultView: View {
 
             HStack(spacing: 16) {
                 Button(action: {
-                    downloadFile(filePath: outputFCPXMLFilePath)
+                    FileUtility.saveFileWithDialog(filePath: outputFCPXMLFilePath)
                 }) {
                     Image(systemName: "square.and.arrow.down")
                     Text("Download .fcpxml")
@@ -1622,42 +1622,6 @@ struct SRTConverterResultView: View {
                 _ = scriptObject.executeAndReturnError(&error)
             }
         }
-    }
-
-    private func downloadFile(filePath: String) {
-        let fileURL = URL(fileURLWithPath: filePath)
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-
-        guard let destinationURL = downloadsURL?.appendingPathComponent(fileURL.lastPathComponent) else {
-            return
-        }
-
-        let fileManager = FileManager.default
-        var updatedDestinationURL = destinationURL
-
-        if fileManager.fileExists(atPath: updatedDestinationURL.path) {
-            let originalFileName = updatedDestinationURL.deletingPathExtension().lastPathComponent
-            let originalFileExtension = updatedDestinationURL.pathExtension
-
-            var counter = 1
-            while fileManager.fileExists(atPath: updatedDestinationURL.path) {
-                let newFileName = "\(originalFileName)_\(counter).\(originalFileExtension)"
-                updatedDestinationURL = updatedDestinationURL.deletingLastPathComponent().appendingPathComponent(newFileName)
-                counter += 1
-            }
-        }
-
-        let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
-            guard let location = location else { return }
-
-            do {
-                try fileManager.moveItem(at: location, to: updatedDestinationURL)
-            } catch {
-                // Handle error silently
-            }
-        }
-
-        task.resume()
     }
 }
 
