@@ -13,7 +13,6 @@ class HomeViewModel: ObservableObject {
     @Published var customFps: String = "30"
     @Published var selectedLanguage = "Auto"
     @Published var selectedModel = "Medium"
-    @Published var selectedPreset: WhisperPreset = .balanced
     @Published var showSettings = false
     
     // Download state

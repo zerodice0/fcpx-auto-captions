@@ -54,43 +54,98 @@ struct SettingsWindowView: View {
     @State private var selectedSection: SettingsSection = .quality
 
     var body: some View {
-        NavigationSplitView {
-            // Sidebar
-            List(SettingsSection.allCases, selection: $selectedSection) { section in
-                Label(section.localizedName, systemImage: section.icon)
-                    .tag(section)
-            }
-            .listStyle(.sidebar)
-            .frame(minWidth: 150)
-        } detail: {
-            // Content
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    Text(selectedSection.localizedName)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Spacer()
+        VStack(spacing: 0) {
+            // Quick Presets Bar
+            quickPresetsBar
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+
+            Divider()
+
+            NavigationSplitView {
+                // Sidebar
+                List(SettingsSection.allCases, selection: $selectedSection) { section in
+                    Label(section.localizedName, systemImage: section.icon)
+                        .tag(section)
                 }
-                .padding()
+                .listStyle(.sidebar)
+                .frame(minWidth: 150)
+            } detail: {
+                // Content
+                VStack(alignment: .leading, spacing: 0) {
+                    // Header
+                    HStack {
+                        Text(selectedSection.localizedName)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                    .padding()
 
-                Divider()
+                    Divider()
 
-                // Settings Content
-                ScrollView {
-                    settingsContent
-                        .padding()
+                    // Settings Content
+                    ScrollView {
+                        settingsContent
+                            .padding()
+                    }
+
+                    Divider()
+
+                    // Footer
+                    footerButtons
                 }
-
-                Divider()
-
-                // Footer
-                footerButtons
+                .frame(minWidth: 400, minHeight: 400)
             }
-            .frame(minWidth: 400, minHeight: 400)
         }
-        .frame(minWidth: 600, minHeight: 500)
+        .frame(minWidth: 600, minHeight: 550)
+    }
 
+    // MARK: - Quick Presets Bar
+    private var quickPresetsBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(String(localized: "Quick Presets:", comment: "Quick presets label"))
+                .font(.headline)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                ForEach(WhisperPreset.allCases.filter { $0 != .custom }) { preset in
+                    presetButton(for: preset)
+                }
+
+                Spacer()
+
+                // Custom indicator
+                if settingsManager.currentPreset == .custom {
+                    Text(String(localized: "Custom", comment: "Custom preset indicator"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.secondary.opacity(0.2))
+                        .cornerRadius(8)
+                }
+            }
+        }
+    }
+
+    private func presetButton(for preset: WhisperPreset) -> some View {
+        let isSelected = settingsManager.currentPreset == preset
+
+        return Button(action: {
+            settingsManager.currentPreset = preset
+        }) {
+            Text(preset.displayName)
+                .font(.caption)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .white : .primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.2))
+                .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
+        .help(preset.description)
     }
 
     // MARK: - Settings Content

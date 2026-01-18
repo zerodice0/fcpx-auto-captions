@@ -84,39 +84,37 @@ struct HomeView: View {
                     .frame(alignment: .leading)
                 }
 
-                // Preset Selection
+                // Settings Summary
                 GridRow {
-                    Text(String(localized: "Preset:", comment: "Preset label"))
-                    Picker(selection: $viewModel.selectedPreset, label: EmptyView()) {
-                        ForEach(WhisperPreset.allCases) { preset in
-                            Text(preset.displayName).tag(preset)
+                    Text(String(localized: "Settings:", comment: "Settings label"))
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Text(settingsManager.presetDisplayName)
+                                .fontWeight(.medium)
+
+                            Button(action: { viewModel.showSettings = true }) {
+                                Image(systemName: "gear")
+                                    .font(.system(size: 12))
+                            }
+                            .buttonStyle(.borderless)
+                            .help(String(localized: "Open settings", comment: "Settings button tooltip"))
                         }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(alignment: .leading)
-                    .onChange(of: viewModel.selectedPreset) { newPreset in
-                        settingsManager.currentPreset = newPreset
+
+                        Text(settingsManager.settingsSummary)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
 
                 // Action Buttons
                 GridRow {
-                    HStack(spacing: 12) {
-                        Button(action: { viewModel.showSettings = true }) {
-                            HStack {
-                                Image(systemName: "gear")
-                                Text(String(localized: "Settings", comment: "Settings button"))
-                            }
-                        }
-
-                        Button(action: {
-                            viewModel.validateAndStartTranscription()
-                        }, label: {
-                            Text(String(localized: "Create", comment: "Create button"))
-                        })
-                        .buttonStyle(BorderedProminentButtonStyle())
-                        .disabled(viewModel.fileURL == nil || !viewModel.isFpsValid)
-                    }
+                    Button(action: {
+                        viewModel.validateAndStartTranscription()
+                    }, label: {
+                        Text(String(localized: "Create", comment: "Create button"))
+                    })
+                    .buttonStyle(BorderedProminentButtonStyle())
+                    .disabled(viewModel.fileURL == nil || !viewModel.isFpsValid)
                 }
                 .gridCellColumns(2)
                 .gridCellAnchor(.center)

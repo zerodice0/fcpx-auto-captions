@@ -117,6 +117,19 @@ class SettingsManager: ObservableObject {
     func closeSettings() {
         isSettingsWindowOpen = false
     }
+
+    // MARK: - Settings Summary
+    /// Returns a summary text describing the current settings
+    var settingsSummary: String {
+        let bestOf = settings.bestOf
+        let beam = settings.beamSize
+        return "best-of: \(bestOf), beam: \(beam)"
+    }
+
+    /// Returns the display name for the current preset
+    var presetDisplayName: String {
+        currentPreset.displayName
+    }
 }
 
 // MARK: - Environment Key
