@@ -146,11 +146,42 @@ struct SRTConverter {
     static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String, width: Int = 1920, height: Int = 1080) -> String {
         do {
             let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
-            let subtitles: [String] = srtContent.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n\n")
+
+            // Validate SRT content is not empty
+            let trimmedContent = srtContent.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedContent.isEmpty else {
+                print("Error: SRT file is empty")
+                return "Error: SRT file is empty"
+            }
+
+            let subtitles: [String] = trimmedContent.components(separatedBy: "\n\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+            // Validate we have at least one subtitle
+            guard !subtitles.isEmpty else {
+                print("Error: No subtitles found in SRT file")
+                return "Error: No subtitles found"
+            }
+
+            // Validate last subtitle format before accessing
+            guard let lastSubtitle = subtitles.last else {
+                print("Error: No subtitles found in SRT file")
+                return "Error: No subtitles found"
+            }
+
+            let lastSubtitleLines = lastSubtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
+            guard lastSubtitleLines.count >= 2 else {
+                print("Error: Invalid subtitle format - insufficient lines")
+                return "Error: Invalid subtitle format"
+            }
+
+            let timeRangeComponents = lastSubtitleLines[1].components(separatedBy: " --> ")
+            guard timeRangeComponents.count >= 2 else {
+                print("Error: Invalid subtitle format - missing time range")
+                return "Error: Invalid subtitle format"
+            }
 
             // extract total duration from srt
-            let lastSubtitle = subtitles.last!
-            let totalSrtTime = lastSubtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")[1].components(separatedBy: " --> ")[1]
+            let totalSrtTime = timeRangeComponents[1]
             let totalFrame = srtTimeToFrame(srtTime: totalSrtTime, fps: Float(fps))
             let hundredFoldTotalFrame = String(100 * totalFrame)
             let hundredFoldFps = String(Int(fps * 100))
@@ -216,7 +247,18 @@ struct SRTConverter {
 
             for (i, subtitle) in subtitles.enumerated() {
                 let subtitleItem = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
+
+                // Skip malformed subtitles (need at least: index, time range, text)
+                guard subtitleItem.count >= 3 else {
+                    print("Warning: Skipping malformed subtitle at index \(i)")
+                    continue
+                }
+
                 let timeRange = subtitleItem[1].components(separatedBy: " --> ")
+                guard timeRange.count >= 2 else {
+                    print("Warning: Skipping subtitle with invalid time range at index \(i)")
+                    continue
+                }
 
                 let offset = timeRange[0]
                 let end = timeRange[1]
@@ -439,7 +481,7 @@ struct HomeView: View {
     @State var isSelected: Bool = false
     @State private var selectedFrameRate: FrameRate = .fps30
     @State private var customFps: String = "30"
-    @State private var selectedLanguage = "Chinese Simplified"
+    @State private var selectedLanguage = "Auto"
     @State private var selectedModel = "Medium"
     @State private var selectedPreset: WhisperPreset = .balanced
     @State private var showSettings = false
@@ -495,12 +537,12 @@ struct HomeView: View {
                                 panel.canChooseFiles = true
                                 panel.canChooseDirectories = true
                                 panel.allowsMultipleSelection = false
-                                panel.allowedContentTypes = [.mp3]
+                                panel.allowedContentTypes = [.audio, .movie]
                                 if panel.runModal() == .OK {
                                     self.fileURL = panel.urls.first
                                     if let fileName = panel.urls.first?.lastPathComponent {
                                         self.fileName = fileName
-                                        self.projectName = fileName.replacingOccurrences(of: ".mp3", with: "")
+                                        self.projectName = (fileName as NSString).deletingPathExtension
                                     }
                                 }
                             }) {
@@ -595,8 +637,35 @@ struct HomeView: View {
                         let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(modelsMapping[selectedModel]!).bin")
 
                         if fileManager.fileExists(atPath: destinationURL.path) {
-//                            print("File exists")
-                            whisper_auto_captions()
+                            // Validate existing model file
+                            do {
+                                let fileAttributes = try fileManager.attributesOfItem(atPath: destinationURL.path)
+                                let fileSize = fileAttributes[.size] as? Int64 ?? 0
+                                let minimumValidFileSize: Int64 = 50 * 1024 * 1024  // 50MB minimum
+                                
+                                if fileSize >= minimumValidFileSize {
+                                    // Model file is valid, proceed
+                                    whisper_auto_captions()
+                                } else {
+                                    // Model file is invalid/corrupted, delete and re-download
+                                    print("Invalid model file detected (\(fileSize) bytes), deleting and re-downloading...")
+                                    try fileManager.removeItem(atPath: destinationURL.path)
+                                    download_model(model: modelsMapping[selectedModel]!) { success in
+                                        if success {
+                                            whisper_auto_captions()
+                                        }
+                                    }
+                                }
+                            } catch {
+                                // Can't read file attributes, treat as invalid
+                                print("Failed to validate model file: \(error), re-downloading...")
+                                try? fileManager.removeItem(atPath: destinationURL.path)
+                                download_model(model: modelsMapping[selectedModel]!) { success in
+                                    if success {
+                                        whisper_auto_captions()
+                                    }
+                                }
+                            }
                         } else {
 //                            print("File does not exist")
                             download_model(model: modelsMapping[selectedModel]!) { success in
@@ -668,18 +737,26 @@ struct HomeView: View {
 
                 group.wait()
 
-                if let srtFilePath = outputSplitSRTFilePath {
+                if let srtFilePath = outputSplitSRTFilePath, !srtFilePath.isEmpty {
                     DispatchQueue.main.async {
                         srtFiles.append(srtFilePath)
                         self.progress = 0.0
                         self.progressPercentage = 0
                     }
+                } else {
+                    print("Warning: Batch \(b + 1) failed to generate SRT file")
                 }
             }
 
             DispatchQueue.main.async {
                 self.progress = 1.0
                 self.progressPercentage = 100
+
+                if srtFiles.isEmpty {
+                    self.status = "Error: No subtitles generated"
+                    self.startCreatingAutoCaptions = false
+                    return
+                }
 
                 let outputSRTFilePath = merge_srt(srt_files: srtFiles)
                 // srt to fcpxml
@@ -717,7 +794,8 @@ struct HomeView: View {
                 result.append(outputFilePath)
             }
         } else {
-//            print("unable to get audio duation")
+            // Fallback: return original file if can't determine duration
+            return [inputFilePath]
         }
         return result
     }
@@ -741,16 +819,38 @@ struct HomeView: View {
 
 
     func merge_srt(srt_files: [String]) -> String {
+        guard !srt_files.isEmpty else {
+            return ""
+        }
         let merged_srt_path = srt_files[0] + "_merged.srt"
         var merged_contents = ""
         var index = 1
         for (i, srt_path) in srt_files.enumerated() {
             do {
                 let srt_content = try String(contentsOfFile: srt_path, encoding: .utf8)
-                        let subtitles: [String] = srt_content.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n\n")
+                let trimmed_content = srt_content.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                // Skip empty SRT files
+                guard !trimmed_content.isEmpty else {
+                    print("Warning: Skipping empty SRT file: \(srt_path)")
+                    continue
+                }
+
+                let subtitles: [String] = trimmed_content.components(separatedBy: "\n\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                 for (_, subtitle) in subtitles.enumerated() {
                     let subtitle_item = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
+
+                    // Skip malformed subtitles
+                    guard subtitle_item.count >= 3 else {
+                        print("Warning: Skipping malformed subtitle in \(srt_path)")
+                        continue
+                    }
+
                     let time_range = subtitle_item[1].components(separatedBy: " --> ")
+                    guard time_range.count >= 2 else {
+                        print("Warning: Skipping subtitle with invalid time range in \(srt_path)")
+                        continue
+                    }
 
                     let start = time_range[0]
                     let end = time_range[1]
@@ -765,10 +865,10 @@ struct HomeView: View {
                     merged_contents += "\(new_time_range)\n"
                     merged_contents += "\(subtitle_content)\n\n"
                     index += 1
-                    
+
                 }
             } catch {
-//                print("error with reading srt files \(error)")
+                print("Error reading SRT file \(srt_path): \(error)")
             }
         }
         do {
@@ -781,7 +881,7 @@ struct HomeView: View {
     }
     
     func download_model(model: String, completion: @escaping (Bool) -> Void) {
-        guard let url = URL(string: "https://huggingface.co/datasets/ggerganov/whisper.cpp/resolve/main/ggml-\(model.lowercased()).bin") else {
+        guard let url = URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(model.lowercased()).bin") else {
             completion(false)
             return
         }
@@ -792,6 +892,11 @@ struct HomeView: View {
             self.isDownloading = false
             self.showAlert = false
             completion(true)
+        }, errorHandler: { errorMessage in
+            self.isDownloading = false
+            self.showAlert = false
+            print("Download error: \(errorMessage)")
+            completion(false)
         })
         
 
@@ -829,7 +934,7 @@ struct HomeView: View {
         let ffmpegPath = Bundle.main.path(forResource: "ffmpeg", ofType: nil)
         let task = Process()
         task.launchPath = ffmpegPath
-        task.arguments = ["-i", filePathString, "-ar", "16000", wavFilePath]
+        task.arguments = ["-i", filePathString, "-ar", "16000", "-ac", "1", wavFilePath]
         task.launch()
         task.waitUntilExit()
         // Note: task.terminationStatus can be checked here if error handling is needed
@@ -849,7 +954,10 @@ struct HomeView: View {
             {
                 let task = Process()
                 task.launchPath = whisperCliPath
-                if selectedLanguageShortCut != "zh" {
+                if selectedLanguageShortCut == "auto" {
+                    // Auto mode: let whisper.cpp detect language automatically (no prompt)
+                    task.arguments = ["-m", modelPath.path, "-l", "auto", "-pp", "-osrt", "-f", outputWavFilePath]
+                } else if selectedLanguageShortCut != "zh" {
                     task.arguments = ["-m", modelPath.path, "-l", selectedLanguageShortCut, "-pp", "-osrt", "-f", outputWavFilePath]
                 } else {
                     if selectedLanguage == "Chinese Simplified" {
@@ -913,23 +1021,50 @@ struct HomeView: View {
                 
                 
                 task.waitUntilExit()
-                
+
                 DispatchQueue.main.async {
                     self.progress = 1.0
                     self.progressPercentage = 100
                     self.remainingTime = "00:00"
                 }
-                
+
                 let outputData = outputHandle.readDataToEndOfFile()
                 _ = String(data: outputData, encoding: .utf8)
-//                    print("Standard output: \(output)")
-                
-                
+
+
             }
-            
-                let srtFilePath = outputWavFilePath + ".srt"
-                completion(srtFilePath)
+
+            let srtFilePath = outputWavFilePath + ".srt"
+
+            // Verify the SRT file was created and has content (reusing fileManager from above)
+            if fileManager.fileExists(atPath: srtFilePath) {
+                do {
+                    let fileAttributes = try fileManager.attributesOfItem(atPath: srtFilePath)
+                    let fileSize = fileAttributes[.size] as? Int64 ?? 0
+
+                    if fileSize > 0 {
+                        // Check if the file has valid SRT content (at least one subtitle entry)
+                        let srtContent = try String(contentsOfFile: srtFilePath, encoding: .utf8)
+                        let trimmed = srtContent.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty && trimmed.contains("-->") {
+                            completion(srtFilePath)
+                        } else {
+                            print("Error: SRT file generated but contains no valid subtitles")
+                            completion("")
+                        }
+                    } else {
+                        print("Error: SRT file is empty - whisper-cli may have failed")
+                        completion("")
+                    }
+                } catch {
+                    print("Error reading SRT file: \(error)")
+                    completion("")
+                }
+            } else {
+                print("Error: SRT file was not created - whisper-cli may have failed")
+                completion("")
             }
+        }
         }
 
     func formatSeconds(_ seconds: Double) -> String {

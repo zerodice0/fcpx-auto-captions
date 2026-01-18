@@ -11,7 +11,7 @@ import Foundation
 struct WhisperSettings: Codable, Equatable {
     // MARK: - Basic Settings
     var model: String = "Medium"
-    var language: String = "English"
+    var language: String = "Auto"
     var fps: String = ""
 
     // MARK: - Quality Settings

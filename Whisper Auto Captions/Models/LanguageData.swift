@@ -11,6 +11,7 @@ import Foundation
 struct LanguageData {
     /// All supported language display names
     static let languages: [String] = [
+        "Auto",  // Auto-detect language
         "Arabic", "Azerbaijani", "Armenian", "Albanian", "Afrikaans",
         "Amharic", "Assamese", "Bulgarian", "Bengali", "Breton",
         "Basque", "Bosnian", "Belarusian", "Bashkir", "Chinese Simplified",
@@ -35,6 +36,7 @@ struct LanguageData {
 
     /// Mapping from display name to ISO 639-1 language code
     static let languageToCode: [String: String] = [
+        "Auto": "auto",  // Auto-detect language
         "Arabic": "ar", "Azerbaijani": "az", "Armenian": "hy", "Albanian": "sq",
         "Afrikaans": "af", "Amharic": "am", "Assamese": "as", "Bulgarian": "bg",
         "Bengali": "bn", "Breton": "br", "Basque": "eu", "Bosnian": "bs",
