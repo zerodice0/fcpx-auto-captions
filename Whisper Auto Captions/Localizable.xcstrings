@@ -249,6 +249,7 @@
       }
     },
     "Batch (%@ / %@): %lld%% completed - %@ remaining" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -266,6 +267,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "배치 (%1$@ / %2$@): %3$lld%% 완료 - %4$@ 남음"
+          }
+        }
+      }
+    },
+    "Batch (%@): %lld%% completed - %@ remaining" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Batch (%1$@): %2$lld%% completed - %3$@ remaining"
           }
         }
       }
@@ -428,6 +439,9 @@
           }
         }
       }
+    },
+    "Choose a location to save the file" : {
+      "comment" : "Save panel message"
     },
     "Choose File" : {
       "comment" : "Choose file button",
@@ -2965,6 +2979,9 @@
     },
     "Resolution:" : {
       "comment" : "Resolution label"
+    },
+    "Save File" : {
+      "comment" : "Save panel title"
     },
     "Segment Length" : {
       "comment" : "Segment length section header",
