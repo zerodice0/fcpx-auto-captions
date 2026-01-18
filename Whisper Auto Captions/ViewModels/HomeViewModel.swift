@@ -180,9 +180,10 @@ class HomeViewModel: ObservableObject {
                 return
             }
             
-            let fileManager = FileManager.default
-            let appSupportDir = try! fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            let modelPath = appSupportDir.appendingPathComponent("Whisper Auto Captions/ggml-\(selectedModel.lowercased()).bin")
+            guard let modelPath = try? AppDirectoryUtility.getModelPath(for: selectedModel) else {
+                completion("")
+                return
+            }
             
             guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil),
                   let langCode = languagesMapping[selectedLanguage] else {
@@ -252,7 +253,7 @@ class HomeViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.progressPercentage = pct
             self.progress = prog
-            self.remainingTime = self.formatSeconds(remaining)
+            self.remainingTime = FileUtility.formatSeconds(remaining)
         }
     }
     
@@ -270,15 +271,6 @@ class HomeViewModel: ObservableObject {
         completion(path)
     }
 
-    private func formatSeconds(_ seconds: Double) -> String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = seconds >= 3600 ? [.hour, .minute, .second] : [.minute, .second]
-        formatter.unitsStyle = .positional
-        formatter.zeroFormattingBehavior = .pad
-        formatter.maximumUnitCount = seconds >= 3600 ? 3 : 2
-        return formatter.string(from: seconds) ?? "00:00"
-    }
-    
     // MARK: - Reset
     func reset() {
         outputCaptions = ""
@@ -296,12 +288,12 @@ class HomeViewModel: ObservableObject {
     // MARK: - Model Validation
     func validateAndStartTranscription() {
         let fm = FileManager.default
-        let appSupportDir = try! fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let whisperDir = appSupportDir.appendingPathComponent("Whisper Auto Captions")
-        try? fm.createDirectory(at: whisperDir, withIntermediateDirectories: true)
         
-        guard let modelFileName = modelsMapping[selectedModel] else { return }
-        let modelPath = whisperDir.appendingPathComponent("ggml-\(modelFileName).bin")
+        // Ensure app directory exists
+        try? AppDirectoryUtility.ensureDirectoryExists()
+        
+        guard let modelFileName = modelsMapping[selectedModel],
+              let modelPath = try? AppDirectoryUtility.getModelPath(for: modelFileName) else { return }
 
         if fm.fileExists(atPath: modelPath.path) {
             let attrs = try? fm.attributesOfItem(atPath: modelPath.path)

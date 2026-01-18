@@ -1,16 +1,39 @@
 import Foundation
 
+// MARK: - XMLElement Extension for Safe Attribute Handling
+private extension XMLElement {
+    /// Safely add an attribute to this element
+    /// - Parameters:
+    ///   - name: Attribute name
+    ///   - value: Attribute value
+    func addSafeAttribute(name: String, value: String) {
+        if let attr = XMLNode.attribute(withName: name, stringValue: value) as? XMLNode {
+            addAttribute(attr)
+        }
+    }
+}
+
 // MARK: - FCPXML Service
 /// Service for converting SRT files to FCPXML format for Final Cut Pro
 struct FCPXMLService {
-    
+
     // MARK: - Time Conversion
     static func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
-        // convert srt time to ms
-        let ms = Int(srtTime.suffix(3))!
+        // Convert SRT time to milliseconds
+        guard srtTime.count >= 4 else { return 0 }
+
+        let ms = Int(srtTime.suffix(3)) ?? 0
         let timeComponents = srtTime.prefix(srtTime.count - 4).split(separator: ":")
-        let srtTimeMs = (Int(timeComponents[0])! * 3600 + Int(timeComponents[1])! * 60 + Int(timeComponents[2])!) * 1000 + ms
-        // convert ms to frame
+
+        guard timeComponents.count >= 3,
+              let hours = Int(timeComponents[0]),
+              let minutes = Int(timeComponents[1]),
+              let seconds = Int(timeComponents[2]) else {
+            return 0
+        }
+
+        let srtTimeMs = (hours * 3600 + minutes * 60 + seconds) * 1000 + ms
+        // Convert ms to frame
         let frame = Int(floor(Float(srtTimeMs) / (1000 / fps)))
         return frame
     }
@@ -66,71 +89,72 @@ struct FCPXMLService {
                 return "Error: Invalid subtitle format"
             }
 
-            // extract total duration from srt
+            // Extract total duration from srt
             let totalSrtTime = timeRangeComponents[1]
             let totalFrame = srtTimeToFrame(srtTime: totalSrtTime, fps: Float(fps))
             let hundredFoldTotalFrame = String(100 * totalFrame)
             let hundredFoldFps = String(Int(fps * 100))
 
-            // fcpxml
+            // Build FCPXML structure
             let fcpxmlElement = XMLElement(name: "fcpxml")
-            fcpxmlElement.addAttribute(XMLNode.attribute(withName: "version", stringValue: "1.9") as! XMLNode)
+            fcpxmlElement.addSafeAttribute(name: "version", value: "1.9")
 
-            // resource
+            // Resources
             let resourcesElement = XMLElement(name: "resources")
 
-            // format - use dynamic resolution
+            // Format - use dynamic resolution
             let formatName = VideoResolution.formatName(width: width, height: height, fps: fps)
             let formatElement = XMLElement(name: "format")
-            formatElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r1") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: formatName) as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "frameDuration", stringValue: "100/\(hundredFoldFps)s") as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "width", stringValue: String(width)) as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "height", stringValue: String(height)) as! XMLNode)
-            formatElement.addAttribute(XMLNode.attribute(withName: "colorSpace", stringValue: "1-1-1 (Rec. 709)") as! XMLNode)
+            formatElement.addSafeAttribute(name: "id", value: "r1")
+            formatElement.addSafeAttribute(name: "name", value: formatName)
+            formatElement.addSafeAttribute(name: "frameDuration", value: "100/\(hundredFoldFps)s")
+            formatElement.addSafeAttribute(name: "width", value: String(width))
+            formatElement.addSafeAttribute(name: "height", value: String(height))
+            formatElement.addSafeAttribute(name: "colorSpace", value: "1-1-1 (Rec. 709)")
             resourcesElement.addChild(formatElement)
 
-            // effect
+            // Effect
             let effectElement = XMLElement(name: "effect")
-            effectElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "r2") as! XMLNode)
-            effectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Basic Title") as! XMLNode)
-            effectElement.addAttribute(XMLNode.attribute(withName: "uid", stringValue: ".../Titles.localized/Bumper:Opener.localized/Basic Title.localized/Basic Title.moti") as! XMLNode)
+            effectElement.addSafeAttribute(name: "id", value: "r2")
+            effectElement.addSafeAttribute(name: "name", value: "Basic Title")
+            effectElement.addSafeAttribute(name: "uid", value: ".../Titles.localized/Bumper:Opener.localized/Basic Title.localized/Basic Title.moti")
             resourcesElement.addChild(effectElement)
 
-            // library
+            // Library
             let libraryElement = XMLElement(name: "library")
 
-            // event
+            // Event
             let eventElement = XMLElement(name: "event")
-            eventElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Whisper Auto Captions") as! XMLNode)
+            eventElement.addSafeAttribute(name: "name", value: "Whisper Auto Captions")
             libraryElement.addChild(eventElement)
 
-            // project
+            // Project
             let projectElement = XMLElement(name: "project")
-            projectElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(projectName)") as! XMLNode)
+            projectElement.addSafeAttribute(name: "name", value: "\(projectName)")
             eventElement.addChild(projectElement)
 
-            // sequence
+            // Sequence
             let sequenceElement = XMLElement(name: "sequence")
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "format", stringValue: "r1") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "tcFormat", stringValue: "NDF") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioLayout", stringValue: "stereo") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "audioRate", stringValue: "48k") as! XMLNode)
-            sequenceElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(totalFrame)/\(hundredFoldFps)s") as! XMLNode)
+            sequenceElement.addSafeAttribute(name: "format", value: "r1")
+            sequenceElement.addSafeAttribute(name: "tcStart", value: "0s")
+            sequenceElement.addSafeAttribute(name: "tcFormat", value: "NDF")
+            sequenceElement.addSafeAttribute(name: "audioLayout", value: "stereo")
+            sequenceElement.addSafeAttribute(name: "audioRate", value: "48k")
+            sequenceElement.addSafeAttribute(name: "duration", value: "\(totalFrame)/\(hundredFoldFps)s")
             projectElement.addChild(sequenceElement)
 
-            // spine
+            // Spine
             let spineElement = XMLElement(name: "spine")
             sequenceElement.addChild(spineElement)
 
-            // gap
+            // Gap
             let gapElement = XMLElement(name: "gap")
-            gapElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Gap") as! XMLNode)
-            gapElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "0s") as! XMLNode)
-            gapElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldTotalFrame)/\(hundredFoldFps)s") as! XMLNode)
+            gapElement.addSafeAttribute(name: "name", value: "Gap")
+            gapElement.addSafeAttribute(name: "offset", value: "0s")
+            gapElement.addSafeAttribute(name: "duration", value: "\(hundredFoldTotalFrame)/\(hundredFoldFps)s")
             spineElement.addChild(gapElement)
 
+            // Process each subtitle
             for (i, subtitle) in subtitles.enumerated() {
                 let subtitleItem = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: "\n")
 
@@ -161,123 +185,16 @@ struct FCPXMLService {
                     }
                 }
 
-                if language == "Chinese" {
-                    // title
-                    let titleElement = XMLElement(name: "title")
-                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundredFoldOffsetFrame)/\(hundredFoldFps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitleContent) - Basic Title") as! XMLNode)
-
-                    // param1
-                    let param1Element = XMLElement(name: "param")
-                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
-                    titleElement.addChild(param1Element)
-
-                    // param2
-                    let param2Element = XMLElement(name: "param")
-                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
-                    titleElement.addChild(param2Element)
-
-                    // param3
-                    let param3Element = XMLElement(name: "param")
-                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
-                    titleElement.addChild(param3Element)
-
-                    // text
-                    let textElement = XMLElement(name: "text")
-                    titleElement.addChild(textElement)
-
-                    // text style
-                    let textStyleElement = XMLElement(name: "text-style")
-                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
-                    textStyleElement.stringValue = subtitleContent
-                    textElement.addChild(textStyleElement)
-
-                    // text style def
-                    let textStyleDefElement = XMLElement(name: "text-style-def")
-                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
-                    titleElement.addChild(textStyleDefElement)
-
-                    // text style 2
-                    let textStyle2Element = XMLElement(name: "text-style")
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "PingFang SC") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "50") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Semibold") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "bold", stringValue: "1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
-                    textStyleDefElement.addChild(textStyle2Element)
-
-                    gapElement.addChild(titleElement)
-
-                } else {
-                    // title
-                    let titleElement = XMLElement(name: "title")
-                    titleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "r2") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "lane", stringValue: "1") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "offset", stringValue: "\(hundredFoldOffsetFrame)/\(hundredFoldFps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "duration", stringValue: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s") as! XMLNode)
-                    titleElement.addAttribute(XMLNode.attribute(withName: "name", stringValue: "\(subtitleContent) - Basic Title") as! XMLNode)
-
-                    // param1
-                    let param1Element = XMLElement(name: "param")
-                    param1Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Position") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/1/100/101") as! XMLNode)
-                    param1Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "0 -465") as! XMLNode)
-                    titleElement.addChild(param1Element)
-
-                    // param2
-                    let param2Element = XMLElement(name: "param")
-                    param2Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Flatten") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "999/999166631/999166633/2/351") as! XMLNode)
-                    param2Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1") as! XMLNode)
-                    titleElement.addChild(param2Element)
-
-                    // param3
-                    let param3Element = XMLElement(name: "param")
-                    param3Element.addAttribute(XMLNode.attribute(withName: "name", stringValue: "Alignment") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "key", stringValue: "9999/999166631/999166633/2/354/999169573/401") as! XMLNode)
-                    param3Element.addAttribute(XMLNode.attribute(withName: "value", stringValue: "1 (Center)") as! XMLNode)
-                    titleElement.addChild(param3Element)
-
-                    // text
-                    let textElement = XMLElement(name: "text")
-                    titleElement.addChild(textElement)
-
-                    // text style
-                    let textStyleElement = XMLElement(name: "text-style")
-                    textStyleElement.addAttribute(XMLNode.attribute(withName: "ref", stringValue: "ts\(String(i))") as! XMLNode)
-                    textStyleElement.stringValue = subtitleContent
-                    textElement.addChild(textStyleElement)
-
-                    // text style def
-                    let textStyleDefElement = XMLElement(name: "text-style-def")
-                    textStyleDefElement.addAttribute(XMLNode.attribute(withName: "id", stringValue: "ts\(String(i))") as! XMLNode)
-                    titleElement.addChild(textStyleDefElement)
-
-                    // text style 2
-                    let textStyle2Element = XMLElement(name: "text-style")
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "font", stringValue: "Helvetica") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontSize", stringValue: "45") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontFace", stringValue: "Regular") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "fontColor", stringValue: "1 1 1 1") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowColor", stringValue: "0 0 0 0.75") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "shadowOffset", stringValue: "4 315") as! XMLNode)
-                    textStyle2Element.addAttribute(XMLNode.attribute(withName: "alignment", stringValue: "center") as! XMLNode)
-                    textStyleDefElement.addChild(textStyle2Element)
-
-                    gapElement.addChild(titleElement)
-                }
+                // Create title element based on language
+                let titleElement = createTitleElement(
+                    language: language,
+                    index: i,
+                    subtitleContent: subtitleContent,
+                    hundredFoldOffsetFrame: hundredFoldOffsetFrame,
+                    hundredFoldDurationFrame: hundredFoldDurationFrame,
+                    hundredFoldFps: hundredFoldFps
+                )
+                gapElement.addChild(titleElement)
             }
 
             // Add the resources and library elements to the fcpxml element
@@ -294,11 +211,92 @@ struct FCPXMLService {
             // Write the XML document to the output file
             let xmlData = xmlDoc.xmlData(options: .nodePrettyPrint)
             let fileUrl = URL(fileURLWithPath: srtPath + ".fcpxml")
-            try! xmlData.write(to: fileUrl)
+            try xmlData.write(to: fileUrl)
             return srtPath + ".fcpxml"
         } catch {
+            print("Error converting SRT to FCPXML: \(error)")
             return "Error"
         }
+    }
+
+    // MARK: - Private Helpers
+
+    /// Create a title element for a subtitle
+    private static func createTitleElement(
+        language: String,
+        index: Int,
+        subtitleContent: String,
+        hundredFoldOffsetFrame: String,
+        hundredFoldDurationFrame: String,
+        hundredFoldFps: String
+    ) -> XMLElement {
+        let titleElement = XMLElement(name: "title")
+        titleElement.addSafeAttribute(name: "ref", value: "r2")
+        titleElement.addSafeAttribute(name: "lane", value: "1")
+        titleElement.addSafeAttribute(name: "offset", value: "\(hundredFoldOffsetFrame)/\(hundredFoldFps)s")
+        titleElement.addSafeAttribute(name: "duration", value: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s")
+        titleElement.addSafeAttribute(name: "name", value: "\(subtitleContent) - Basic Title")
+
+        // Position param
+        let param1Element = XMLElement(name: "param")
+        param1Element.addSafeAttribute(name: "name", value: "Position")
+        param1Element.addSafeAttribute(name: "key", value: "9999/999166631/999166633/1/100/101")
+        param1Element.addSafeAttribute(name: "value", value: "0 -465")
+        titleElement.addChild(param1Element)
+
+        // Flatten param
+        let param2Element = XMLElement(name: "param")
+        param2Element.addSafeAttribute(name: "name", value: "Flatten")
+        param2Element.addSafeAttribute(name: "key", value: "999/999166631/999166633/2/351")
+        param2Element.addSafeAttribute(name: "value", value: "1")
+        titleElement.addChild(param2Element)
+
+        // Alignment param
+        let param3Element = XMLElement(name: "param")
+        param3Element.addSafeAttribute(name: "name", value: "Alignment")
+        param3Element.addSafeAttribute(name: "key", value: "9999/999166631/999166633/2/354/999169573/401")
+        param3Element.addSafeAttribute(name: "value", value: "1 (Center)")
+        titleElement.addChild(param3Element)
+
+        // Text element
+        let textElement = XMLElement(name: "text")
+        titleElement.addChild(textElement)
+
+        // Text style
+        let textStyleElement = XMLElement(name: "text-style")
+        textStyleElement.addSafeAttribute(name: "ref", value: "ts\(String(index))")
+        textStyleElement.stringValue = subtitleContent
+        textElement.addChild(textStyleElement)
+
+        // Text style def
+        let textStyleDefElement = XMLElement(name: "text-style-def")
+        textStyleDefElement.addSafeAttribute(name: "id", value: "ts\(String(index))")
+        titleElement.addChild(textStyleDefElement)
+
+        // Text style 2 (font settings)
+        let textStyle2Element = XMLElement(name: "text-style")
+
+        if language == "Chinese" {
+            textStyle2Element.addSafeAttribute(name: "font", value: "PingFang SC")
+            textStyle2Element.addSafeAttribute(name: "fontSize", value: "50")
+            textStyle2Element.addSafeAttribute(name: "fontFace", value: "Semibold")
+            textStyle2Element.addSafeAttribute(name: "fontColor", value: "1 1 1 1")
+            textStyle2Element.addSafeAttribute(name: "bold", value: "1")
+            textStyle2Element.addSafeAttribute(name: "shadowColor", value: "0 0 0 0.75")
+            textStyle2Element.addSafeAttribute(name: "shadowOffset", value: "4 315")
+            textStyle2Element.addSafeAttribute(name: "alignment", value: "center")
+        } else {
+            textStyle2Element.addSafeAttribute(name: "font", value: "Helvetica")
+            textStyle2Element.addSafeAttribute(name: "fontSize", value: "45")
+            textStyle2Element.addSafeAttribute(name: "fontFace", value: "Regular")
+            textStyle2Element.addSafeAttribute(name: "fontColor", value: "1 1 1 1")
+            textStyle2Element.addSafeAttribute(name: "shadowColor", value: "0 0 0 0.75")
+            textStyle2Element.addSafeAttribute(name: "shadowOffset", value: "4 315")
+            textStyle2Element.addSafeAttribute(name: "alignment", value: "center")
+        }
+        textStyleDefElement.addChild(textStyle2Element)
+
+        return titleElement
     }
 }
 

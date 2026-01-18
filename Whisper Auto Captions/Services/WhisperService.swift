@@ -117,15 +117,10 @@ class WhisperService {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
 
-            let fileManager = FileManager.default
-            let applicationSupportDirectory = try! fileManager.url(
-                for: .applicationSupportDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true
-            )
-            let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-            let modelPath = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(selectedModel.lowercased()).bin")
+            guard let modelPath = try? AppDirectoryUtility.getModelPath(for: selectedModel) else {
+                completion("")
+                return
+            }
 
             guard let mainPath = Bundle.main.path(forResource: "main", ofType: nil) else {
                 completion("")
@@ -168,7 +163,7 @@ class WhisperService {
                                 let currentTime = Date()
                                 let elapsed = currentTime.timeIntervalSince(startTime)
                                 let remainingSeconds = progress > 0 ? round((1 - progress) / progress * elapsed) : 0
-                                let remainingTime = self.formatSeconds(remainingSeconds)
+                                let remainingTime = FileUtility.formatSeconds(remainingSeconds)
 
                                 DispatchQueue.main.async {
                                     progressCallback(progressPercentage, progress, remainingTime)
@@ -202,38 +197,12 @@ class WhisperService {
         }
     }
 
-    // MARK: - Helpers
-    private func formatSeconds(_ seconds: Double) -> String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.unitsStyle = .positional
-        formatter.zeroFormattingBehavior = .pad
-
-        if seconds >= 3600 {
-            formatter.maximumUnitCount = 3
-        } else {
-            formatter.maximumUnitCount = 2
-            formatter.allowedUnits = [.minute, .second]
-        }
-
-        return formatter.string(from: seconds) ?? "00:00"
-    }
-
     // MARK: - Model Path
-    func getModelPath(for model: String) -> URL {
-        let fileManager = FileManager.default
-        let applicationSupportDirectory = try! fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-        return whisperAutoCaptionsURL.appendingPathComponent("ggml-\(model.lowercased()).bin")
+    func getModelPath(for model: String) -> URL? {
+        return try? AppDirectoryUtility.getModelPath(for: model)
     }
 
     func isModelDownloaded(_ model: String) -> Bool {
-        let modelPath = getModelPath(for: model)
-        return FileManager.default.fileExists(atPath: modelPath.path)
+        return AppDirectoryUtility.isModelDownloaded(model)
     }
 }

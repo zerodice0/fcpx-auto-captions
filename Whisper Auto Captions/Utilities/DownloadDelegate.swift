@@ -61,18 +61,17 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
             return
         }
 
-        let applicationSupportDirectory = try! fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
+        // Get destination path using AppDirectoryUtility
+        guard let destinationURL = try? AppDirectoryUtility.getModelPath(for: model) else {
+            try? fileManager.removeItem(at: location)
+            DispatchQueue.main.async {
+                self.errorHandler?("Failed to get model destination path")
+            }
+            return
+        }
 
         // Ensure directory exists
-        try? fileManager.createDirectory(at: whisperAutoCaptionsURL, withIntermediateDirectories: true, attributes: nil)
-
-        let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(model.lowercased()).bin")
+        try? AppDirectoryUtility.ensureDirectoryExists()
 
         // Move the downloaded file to the destination URL
         do {

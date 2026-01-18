@@ -89,25 +89,4 @@ class SRTService {
         return newTime
     }
 
-    // MARK: - SRT to FCPXML
-    /// Convert SRT file to FCPXML format for Final Cut Pro
-    func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String) -> String {
-        return FCPXMLService.srtToFCPXML(
-            srtPath: srtPath,
-            fps: fps,
-            projectName: projectName,
-            language: language
-        )
-    }
-
-    // MARK: - Time Conversion Helpers
-    /// Convert SRT time string to frame number
-    func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
-        return FCPXMLService.srtTimeToFrame(srtTime: srtTime, fps: fps)
-    }
-
-    /// Format text by breaking into lines of 16 words
-    func formatText(fullText: String) -> String {
-        return FCPXMLService.formatText(fullText: fullText)
-    }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E6894DEF69154D578BC5C8B5 /* AppDirectoryUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E4CFEB9F6D4EB3A2E1C785 /* AppDirectoryUtility.swift */; };
 		D06D32272A418DFA005F59B8 /* Whisper_Auto_CaptionsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D32262A418DFA005F59B8 /* Whisper_Auto_CaptionsApp.swift */; };
 		D06D32292A418DFA005F59B8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D32282A418DFA005F59B8 /* ContentView.swift */; };
 		D06D322B2A418DFB005F59B8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D06D322A2A418DFB005F59B8 /* Assets.xcassets */; };
@@ -50,6 +51,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D1E4CFEB9F6D4EB3A2E1C785 /* AppDirectoryUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDirectoryUtility.swift; sourceTree = "<group>"; };
 		D06D32232A418DFA005F59B8 /* Whisper Auto Captions.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Whisper Auto Captions.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D06D32262A418DFA005F59B8 /* Whisper_Auto_CaptionsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Whisper_Auto_CaptionsApp.swift; sourceTree = "<group>"; };
 		D06D32282A418DFA005F59B8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 			children = (
 				D33DAFDD81CB4120A00978D5 /* FileUtility.swift */,
 				E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */,
+				D1E4CFEB9F6D4EB3A2E1C785 /* AppDirectoryUtility.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -353,6 +356,7 @@
 				E1A0B1072B0100010001AAA7 /* SRTService.swift in Sources */,
 				E1A0B1082B0100010001AAA8 /* DownloadService.swift in Sources */,
 				E1A0B1092B0100010001AAA9 /* DownloadDelegate.swift in Sources */,
+				E6894DEF69154D578BC5C8B5 /* AppDirectoryUtility.swift in Sources */,
 				E1A0B10A2B0100010001AAAA /* SettingsWindowView.swift in Sources */,
 				E1A0B10B2B0100010001AAAB /* QualitySettingsView.swift in Sources */,
 				E1A0B10C2B0100010001AAAC /* PerformanceSettingsView.swift in Sources */,

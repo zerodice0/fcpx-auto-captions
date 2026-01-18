@@ -40,15 +40,12 @@ class DownloadService: NSObject, ObservableObject {
         }
 
         // Setup download directory
-        let fileManager = FileManager.default
-        let applicationSupportDirectory = try! fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-        try? fileManager.createDirectory(at: whisperAutoCaptionsURL, withIntermediateDirectories: true, attributes: nil)
+        do {
+            try AppDirectoryUtility.ensureDirectoryExists()
+        } catch {
+            completion(false)
+            return
+        }
 
         self.currentModel = model
         self.completionHandler = completion
@@ -103,35 +100,19 @@ class DownloadService: NSObject, ObservableObject {
 
     // MARK: - Check Model Exists
     func isModelDownloaded(_ model: String) -> Bool {
-        let fileManager = FileManager.default
-        let applicationSupportDirectory = try! fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-        let destinationURL = whisperAutoCaptionsURL.appendingPathComponent("ggml-\(model.lowercased()).bin")
-
-        return fileManager.fileExists(atPath: destinationURL.path)
+        return AppDirectoryUtility.isModelDownloaded(model)
     }
 
     // MARK: - Get Model Path
-    func getModelPath(for model: String) -> URL {
-        let fileManager = FileManager.default
-        let applicationSupportDirectory = try! fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let whisperAutoCaptionsURL = applicationSupportDirectory.appendingPathComponent("Whisper Auto Captions")
-        return whisperAutoCaptionsURL.appendingPathComponent("ggml-\(model.lowercased()).bin")
+    func getModelPath(for model: String) -> URL? {
+        return try? AppDirectoryUtility.getModelPath(for: model)
     }
 
     // MARK: - Delete Model
     func deleteModel(_ model: String) -> Bool {
-        let modelPath = getModelPath(for: model)
+        guard let modelPath = getModelPath(for: model) else {
+            return false
+        }
         do {
             try FileManager.default.removeItem(at: modelPath)
             return true

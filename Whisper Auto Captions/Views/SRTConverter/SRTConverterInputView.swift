@@ -134,13 +134,13 @@ struct SRTConverterInputView: View {
     
     // MARK: - Actions
     private func selectFile() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [UTType(filenameExtension: "srt")!]
-        if panel.runModal() == .OK {
-            if let url = panel.urls.first {
+        var allowedTypes: [UTType] = []
+        if let srtType = UTType(filenameExtension: "srt") {
+            allowedTypes.append(srtType)
+        }
+        
+        FileUtility.selectFile(allowedTypes: allowedTypes, allowDirectories: false) { url in
+            if let url = url {
                 viewModel.selectFile(url: url)
             }
         }

@@ -149,13 +149,8 @@ struct HomeView: View {
     
     // MARK: - Actions
     private func selectFile() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.audio, .movie]
-        if panel.runModal() == .OK {
-            if let url = panel.urls.first {
+        FileUtility.selectFile(allowedTypes: [.audio, .movie], allowDirectories: true) { url in
+            if let url = url {
                 viewModel.selectFile(url: url)
             }
         }
