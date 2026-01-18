@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+import UniformTypeIdentifiers
 #if DEBUG
 import Inject
 #endif
@@ -1255,43 +1256,39 @@ struct ProcessView: View {
     }
     func downloadFile(filePath: String) {
         let fileURL = URL(fileURLWithPath: filePath)
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        let fileManager = FileManager.default
 
-        guard let destinationURL = downloadsURL?.appendingPathComponent(fileURL.lastPathComponent) else {
+        // Verify source file exists
+        guard fileManager.fileExists(atPath: filePath) else {
             return
         }
-        
 
-        let fileManager = FileManager.default
-        var updatedDestinationURL = destinationURL
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = fileURL.lastPathComponent
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = String(localized: "Save File", comment: "Save panel title")
+        savePanel.message = String(localized: "Choose a location to save the file", comment: "Save panel message")
 
-        if fileManager.fileExists(atPath: updatedDestinationURL.path) {
-            let originalFileName = updatedDestinationURL.deletingPathExtension().lastPathComponent
-            let originalFileExtension = updatedDestinationURL.pathExtension
-
-            var counter = 1
-            while fileManager.fileExists(atPath: updatedDestinationURL.path) {
-                let newFileName = "\(originalFileName)_\(counter).\(originalFileExtension)"
-                updatedDestinationURL = updatedDestinationURL.deletingLastPathComponent().appendingPathComponent(newFileName)
-                counter += 1
-            }
+        // Set allowed file type based on the file extension
+        let fileExtension = fileURL.pathExtension
+        if let contentType = UTType(filenameExtension: fileExtension) {
+            savePanel.allowedContentTypes = [contentType]
         }
 
-        let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
-            guard let location = location else {
-                return
-            }
-                
-    
-            do {
-                try fileManager.moveItem(at: location, to: updatedDestinationURL)
-//                print("Download completed")
-            } catch {
-//                print("Failed to move downloaded file: \(error.localizedDescription)")
+        savePanel.begin { response in
+            if response == .OK, let destinationURL = savePanel.url {
+                do {
+                    // Remove existing file if it exists at destination
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+                    try fileManager.copyItem(at: fileURL, to: destinationURL)
+                } catch {
+                    // Handle error silently
+                }
             }
         }
-
-        task.resume()
     }
 
 }
@@ -1626,38 +1623,39 @@ struct SRTConverterResultView: View {
 
     private func downloadFile(filePath: String) {
         let fileURL = URL(fileURLWithPath: filePath)
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        let fileManager = FileManager.default
 
-        guard let destinationURL = downloadsURL?.appendingPathComponent(fileURL.lastPathComponent) else {
+        // Verify source file exists
+        guard fileManager.fileExists(atPath: filePath) else {
             return
         }
 
-        let fileManager = FileManager.default
-        var updatedDestinationURL = destinationURL
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = fileURL.lastPathComponent
+        savePanel.canCreateDirectories = true
+        savePanel.isExtensionHidden = false
+        savePanel.title = String(localized: "Save File", comment: "Save panel title")
+        savePanel.message = String(localized: "Choose a location to save the file", comment: "Save panel message")
 
-        if fileManager.fileExists(atPath: updatedDestinationURL.path) {
-            let originalFileName = updatedDestinationURL.deletingPathExtension().lastPathComponent
-            let originalFileExtension = updatedDestinationURL.pathExtension
-
-            var counter = 1
-            while fileManager.fileExists(atPath: updatedDestinationURL.path) {
-                let newFileName = "\(originalFileName)_\(counter).\(originalFileExtension)"
-                updatedDestinationURL = updatedDestinationURL.deletingLastPathComponent().appendingPathComponent(newFileName)
-                counter += 1
-            }
+        // Set allowed file type based on the file extension
+        let fileExtension = fileURL.pathExtension
+        if let contentType = UTType(filenameExtension: fileExtension) {
+            savePanel.allowedContentTypes = [contentType]
         }
 
-        let task = URLSession.shared.downloadTask(with: fileURL) { location, _, error in
-            guard let location = location else { return }
-
-            do {
-                try fileManager.moveItem(at: location, to: updatedDestinationURL)
-            } catch {
-                // Handle error silently
+        savePanel.begin { response in
+            if response == .OK, let destinationURL = savePanel.url {
+                do {
+                    // Remove existing file if it exists at destination
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+                    try fileManager.copyItem(at: fileURL, to: destinationURL)
+                } catch {
+                    // Handle error silently
+                }
             }
         }
-
-        task.resume()
     }
 }
 
