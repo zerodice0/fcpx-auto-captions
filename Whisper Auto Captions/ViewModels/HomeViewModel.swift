@@ -9,12 +9,20 @@ class HomeViewModel: ObservableObject {
     @Published var fileName: String = ""
     @Published var projectName: String = ""
     @Published var isSelected: Bool = false
-    @Published var selectedFrameRate: FrameRate = .fps30
-    @Published var customFps: String = "30"
-    @Published var selectedLanguage = "Auto"
-    @Published var selectedModel = "Medium"
+    @Published var selectedFrameRate: FrameRate = .fps30 {
+        didSet { saveFrameRateSettings() }
+    }
+    @Published var customFps: String = "30" {
+        didSet { saveFrameRateSettings() }
+    }
+    @Published var selectedLanguage = "Auto" {
+        didSet { saveLanguageSetting() }
+    }
+    @Published var selectedModel = "Medium" {
+        didSet { saveModelSetting() }
+    }
     @Published var showSettings = false
-    
+
     // Download state
     @Published var isDownloading = false
     @Published var downloadProgress: Double = 0.0
@@ -35,7 +43,43 @@ class HomeViewModel: ObservableObject {
     // MARK: - Private Properties
     private var downloadDelegate: DownloadDelegate?
     private var downloadTask: URLSessionDownloadTask?
-    
+    private var isInitializing = true  // Prevents saving during init
+
+    // MARK: - Initialization
+    init() {
+        let settings = SettingsManager.shared.settings
+
+        // Restore FPS settings
+        if let frameRate = FrameRate(rawValue: settings.selectedFrameRate) {
+            self.selectedFrameRate = frameRate
+        }
+        self.customFps = settings.customFps
+
+        // Restore language and model
+        self.selectedLanguage = settings.language
+        self.selectedModel = settings.model
+
+        // Mark initialization complete
+        isInitializing = false
+    }
+
+    // MARK: - Settings Persistence
+    private func saveFrameRateSettings() {
+        guard !isInitializing else { return }
+        SettingsManager.shared.settings.selectedFrameRate = selectedFrameRate.rawValue
+        SettingsManager.shared.settings.customFps = customFps
+    }
+
+    private func saveLanguageSetting() {
+        guard !isInitializing else { return }
+        SettingsManager.shared.settings.language = selectedLanguage
+    }
+
+    private func saveModelSetting() {
+        guard !isInitializing else { return }
+        SettingsManager.shared.settings.model = selectedModel
+    }
+
     // MARK: - Data
     let languages = LanguageData.languages
     let languagesMapping = LanguageData.languageToCode

@@ -565,7 +565,7 @@
       }
     },
     "Custom" : {
-      "comment" : "Custom frame rate option\nPreset name for custom settings",
+      "comment" : "Custom frame rate option\nCustom preset indicator\nPreset name for custom settings",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2708,6 +2708,9 @@
         }
       }
     },
+    "Open settings" : {
+      "comment" : "Settings button tooltip"
+    },
     "Output" : {
       "comment" : "Output settings section",
       "localizations" : {
@@ -2804,6 +2807,7 @@
     },
     "Preset:" : {
       "comment" : "Preset label",
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -2937,6 +2941,9 @@
           }
         }
       }
+    },
+    "Quick Presets:" : {
+      "comment" : "Quick presets label"
     },
     "Reset" : {
       "localizations" : {
@@ -3079,6 +3086,7 @@
     },
     "Settings" : {
       "comment" : "Settings button",
+      "extractionState" : "stale",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
@@ -3093,6 +3101,9 @@
           }
         }
       }
+    },
+    "Settings:" : {
+      "comment" : "Settings label"
     },
     "Speaker Diarization" : {
       "comment" : "Diarization section header\nDiarize toggle label",

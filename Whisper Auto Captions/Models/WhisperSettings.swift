@@ -13,6 +13,8 @@ struct WhisperSettings: Codable, Equatable {
     var model: String = "Medium"
     var language: String = "Auto"
     var fps: String = ""
+    var selectedFrameRate: String = "30"  // FrameRate.rawValue for persistence
+    var customFps: String = "30"
 
     // MARK: - Quality Settings
     /// Number of candidates to consider for best transcription (1-10)
