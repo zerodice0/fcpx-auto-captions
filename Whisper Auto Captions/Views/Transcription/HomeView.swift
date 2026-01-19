@@ -15,9 +15,9 @@ struct HomeView: View {
     var body: some View {
         VStack {
             Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
-                // Audio File Selection
+                // Video/Audio File Selection
                 GridRow {
-                    Text("Audio File:")
+                    Text("Video/Audio File:")
                         .gridColumnAlignment(.trailing)
                     HStack {
                         Button(action: selectFile) {
