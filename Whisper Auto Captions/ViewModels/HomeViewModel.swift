@@ -103,6 +103,28 @@ class HomeViewModel: ObservableObject {
         self.fileURL = url
         self.fileName = url.lastPathComponent
         self.projectName = (url.lastPathComponent as NSString).deletingPathExtension
+
+        // Extract frame rate from video files
+        if VideoService.shared.isVideoFile(url: url) {
+            Task {
+                await extractAndSetFrameRate(from: url)
+            }
+        }
+    }
+
+    /// Extract frame rate from video and update settings
+    @MainActor
+    private func extractAndSetFrameRate(from url: URL) async {
+        guard let fps = await VideoService.shared.extractFrameRate(from: url) else {
+            return
+        }
+
+        if let matchedFrameRate = FrameRate.fromValue(fps) {
+            selectedFrameRate = matchedFrameRate
+        } else if FrameRate.isValidFrameRate(fps) {
+            selectedFrameRate = .custom
+            customFps = String(format: "%.3f", fps)
+        }
     }
     
     // MARK: - Model Download

@@ -48,6 +48,7 @@
 		A6787E2B7A654FCE93976ED1 /* SRTConverterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E30E2D148CB493A832A6634 /* SRTConverterView.swift */; };
 		D1C64E2CD9854C8EA3AB23BD /* SRTConverterInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1666579BBD4355B57235A5 /* SRTConverterInputView.swift */; };
 		B0B4292A312D4796B3D3F86F /* SRTConverterResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E435F5425CA499487CBD76C /* SRTConverterResultView.swift */; };
+		F1D2E3A4B5C6D7E8F9A0B1C2 /* VideoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,6 +95,7 @@
 		9E30E2D148CB493A832A6634 /* SRTConverterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTConverterView.swift; sourceTree = "<group>"; };
 		9E1666579BBD4355B57235A5 /* SRTConverterInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTConverterInputView.swift; sourceTree = "<group>"; };
 		9E435F5425CA499487CBD76C /* SRTConverterResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTConverterResultView.swift; sourceTree = "<group>"; };
+		A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,6 +188,7 @@
 				E1A0B1182B0100010001AAA8 /* DownloadService.swift */,
 				E1A0B1302B0100010001AAC0 /* KeychainService.swift */,
 				E1A0B1312B0100010001AAC1 /* GeminiService.swift */,
+				A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -366,6 +369,7 @@
 				E1A0B1272B0100010001AAB7 /* GeminiService.swift in Sources */,
 				E1A0B1282B0100010001AAB8 /* GeminiModels.swift in Sources */,
 				E1A0B1292B0100010001AAB9 /* AIAssistantSettingsView.swift in Sources */,
+				F1D2E3A4B5C6D7E8F9A0B1C2 /* VideoService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

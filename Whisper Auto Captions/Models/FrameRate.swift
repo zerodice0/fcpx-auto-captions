@@ -45,4 +45,18 @@ enum FrameRate: String, CaseIterable, Identifiable {
     static func isValidFrameRate(_ value: Float) -> Bool {
         return value > 0 && value <= 120
     }
+
+    /// Match a Float value to a FrameRate enum case
+    /// - Parameter value: The frame rate value to match
+    /// - Returns: The matching FrameRate case, or nil if no match found within tolerance
+    static func fromValue(_ value: Float) -> FrameRate? {
+        let tolerance: Float = 0.01
+
+        for frameRate in FrameRate.allCases where frameRate != .custom {
+            if abs(frameRate.value - value) < tolerance {
+                return frameRate
+            }
+        }
+        return nil
+    }
 }
