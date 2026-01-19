@@ -29,10 +29,18 @@ class SettingsManager: ObservableObject {
         }
     }
 
+    // MARK: - Title Style Settings
+    @Published var titleStyleSettings: TitleStyleSettings {
+        didSet {
+            saveTitleStyleSettings()
+        }
+    }
+
     // MARK: - Storage Keys
     private enum StorageKeys {
         static let settings = "whisperSettings"
         static let preset = "whisperPreset"
+        static let titleStyle = "titleStyleSettings"
     }
 
     // MARK: - UserDefaults
@@ -41,19 +49,29 @@ class SettingsManager: ObservableObject {
     // MARK: - Initialization
     private init() {
         // Load settings from UserDefaults
+        let loadedSettings: WhisperSettings
         if let data = defaults.data(forKey: StorageKeys.settings),
            let decoded = try? JSONDecoder().decode(WhisperSettings.self, from: data) {
-            self.settings = decoded
+            loadedSettings = decoded
         } else {
-            self.settings = WhisperSettings.default
+            loadedSettings = WhisperSettings.default
+        }
+        self.settings = loadedSettings
+
+        // Load title style settings from UserDefaults
+        if let data = defaults.data(forKey: StorageKeys.titleStyle),
+           let decoded = try? JSONDecoder().decode(TitleStyleSettings.self, from: data) {
+            self.titleStyleSettings = decoded
+        } else {
+            self.titleStyleSettings = TitleStyleSettings.default
         }
 
-        // Load preset from UserDefaults
+        // Load preset from UserDefaults (after all stored properties are initialized)
         if let presetRaw = defaults.string(forKey: StorageKeys.preset),
            let preset = WhisperPreset(rawValue: presetRaw) {
             self.currentPreset = preset
         } else {
-            self.currentPreset = WhisperPreset.detect(from: settings)
+            self.currentPreset = WhisperPreset.detect(from: loadedSettings)
         }
     }
 
@@ -63,6 +81,12 @@ class SettingsManager: ObservableObject {
             defaults.set(encoded, forKey: StorageKeys.settings)
         }
         defaults.set(currentPreset.rawValue, forKey: StorageKeys.preset)
+    }
+
+    private func saveTitleStyleSettings() {
+        if let encoded = try? JSONEncoder().encode(titleStyleSettings) {
+            defaults.set(encoded, forKey: StorageKeys.titleStyle)
+        }
     }
 
     // MARK: - Preset Management
@@ -89,6 +113,7 @@ class SettingsManager: ObservableObject {
     func resetToDefaults() {
         settings = WhisperSettings.default
         currentPreset = .balanced
+        titleStyleSettings = TitleStyleSettings.default
     }
 
     // MARK: - Convenience Accessors

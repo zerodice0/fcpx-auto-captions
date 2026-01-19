@@ -49,6 +49,8 @@
 		D1C64E2CD9854C8EA3AB23BD /* SRTConverterInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1666579BBD4355B57235A5 /* SRTConverterInputView.swift */; };
 		B0B4292A312D4796B3D3F86F /* SRTConverterResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E435F5425CA499487CBD76C /* SRTConverterResultView.swift */; };
 		F1D2E3A4B5C6D7E8F9A0B1C2 /* VideoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */; };
+		T1T1T1T1T1T1T1T1T1T1T1T1 /* TitleStyleSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = T2T2T2T2T2T2T2T2T2T2T2T2 /* TitleStyleSettings.swift */; };
+		T3T3T3T3T3T3T3T3T3T3T3T3 /* TitleStyleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = T4T4T4T4T4T4T4T4T4T4T4T4 /* TitleStyleSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +98,8 @@
 		9E1666579BBD4355B57235A5 /* SRTConverterInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTConverterInputView.swift; sourceTree = "<group>"; };
 		9E435F5425CA499487CBD76C /* SRTConverterResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTConverterResultView.swift; sourceTree = "<group>"; };
 		A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoService.swift; sourceTree = "<group>"; };
+		T2T2T2T2T2T2T2T2T2T2T2T2 /* TitleStyleSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleStyleSettings.swift; sourceTree = "<group>"; };
+		T4T4T4T4T4T4T4T4T4T4T4T4 /* TitleStyleSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleStyleSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +170,7 @@
 				E1A0B1122B0100010001AAA2 /* WhisperPreset.swift */,
 				E1A0B1132B0100010001AAA3 /* LanguageData.swift */,
 				E1A0B1322B0100010001AAC2 /* GeminiModels.swift */,
+				T2T2T2T2T2T2T2T2T2T2T2T2 /* TitleStyleSettings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -252,6 +257,7 @@
 				9E30E2D148CB493A832A6634 /* SRTConverterView.swift */,
 				9E1666579BBD4355B57235A5 /* SRTConverterInputView.swift */,
 				9E435F5425CA499487CBD76C /* SRTConverterResultView.swift */,
+				T4T4T4T4T4T4T4T4T4T4T4T4 /* TitleStyleSettingsView.swift */,
 			);
 			path = SRTConverter;
 			sourceTree = "<group>";
@@ -370,6 +376,8 @@
 				E1A0B1282B0100010001AAB8 /* GeminiModels.swift in Sources */,
 				E1A0B1292B0100010001AAB9 /* AIAssistantSettingsView.swift in Sources */,
 				F1D2E3A4B5C6D7E8F9A0B1C2 /* VideoService.swift in Sources */,
+				T1T1T1T1T1T1T1T1T1T1T1T1 /* TitleStyleSettings.swift in Sources */,
+				T3T3T3T3T3T3T3T3T3T3T3T3 /* TitleStyleSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

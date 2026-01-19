@@ -52,7 +52,7 @@ struct FCPXMLService {
     }
 
     // MARK: - SRT to FCPXML Conversion
-    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String, width: Int = 1920, height: Int = 1080) -> String {
+    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String, width: Int = 1920, height: Int = 1080, titleStyle: TitleStyleSettings = .default) -> String {
         do {
             let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
 
@@ -185,14 +185,15 @@ struct FCPXMLService {
                     }
                 }
 
-                // Create title element based on language
+                // Create title element based on language and style settings
                 let titleElement = createTitleElement(
                     language: language,
                     index: i,
                     subtitleContent: subtitleContent,
                     hundredFoldOffsetFrame: hundredFoldOffsetFrame,
                     hundredFoldDurationFrame: hundredFoldDurationFrame,
-                    hundredFoldFps: hundredFoldFps
+                    hundredFoldFps: hundredFoldFps,
+                    titleStyle: titleStyle
                 )
                 gapElement.addChild(titleElement)
             }
@@ -228,7 +229,8 @@ struct FCPXMLService {
         subtitleContent: String,
         hundredFoldOffsetFrame: String,
         hundredFoldDurationFrame: String,
-        hundredFoldFps: String
+        hundredFoldFps: String,
+        titleStyle: TitleStyleSettings
     ) -> XMLElement {
         let titleElement = XMLElement(name: "title")
         titleElement.addSafeAttribute(name: "ref", value: "r2")
@@ -237,11 +239,11 @@ struct FCPXMLService {
         titleElement.addSafeAttribute(name: "duration", value: "\(hundredFoldDurationFrame)/\(hundredFoldFps)s")
         titleElement.addSafeAttribute(name: "name", value: "\(subtitleContent) - Basic Title")
 
-        // Position param
+        // Position param - use style settings
         let param1Element = XMLElement(name: "param")
         param1Element.addSafeAttribute(name: "name", value: "Position")
         param1Element.addSafeAttribute(name: "key", value: "9999/999166631/999166633/1/100/101")
-        param1Element.addSafeAttribute(name: "value", value: "0 -465")
+        param1Element.addSafeAttribute(name: "value", value: titleStyle.positionString)
         titleElement.addChild(param1Element)
 
         // Flatten param
@@ -251,11 +253,11 @@ struct FCPXMLService {
         param2Element.addSafeAttribute(name: "value", value: "1")
         titleElement.addChild(param2Element)
 
-        // Alignment param
+        // Alignment param - use style settings
         let param3Element = XMLElement(name: "param")
         param3Element.addSafeAttribute(name: "name", value: "Alignment")
         param3Element.addSafeAttribute(name: "key", value: "9999/999166631/999166633/2/354/999169573/401")
-        param3Element.addSafeAttribute(name: "value", value: "1 (Center)")
+        param3Element.addSafeAttribute(name: "value", value: titleStyle.alignment.fcpxmlParamValue)
         titleElement.addChild(param3Element)
 
         // Text element
@@ -273,27 +275,33 @@ struct FCPXMLService {
         textStyleDefElement.addSafeAttribute(name: "id", value: "ts\(String(index))")
         titleElement.addChild(textStyleDefElement)
 
-        // Text style 2 (font settings)
+        // Text style 2 (font settings) - use style settings
         let textStyle2Element = XMLElement(name: "text-style")
 
-        if language == "Chinese" {
-            textStyle2Element.addSafeAttribute(name: "font", value: "PingFang SC")
-            textStyle2Element.addSafeAttribute(name: "fontSize", value: "50")
-            textStyle2Element.addSafeAttribute(name: "fontFace", value: "Semibold")
-            textStyle2Element.addSafeAttribute(name: "fontColor", value: "1 1 1 1")
+        // Font settings from style
+        textStyle2Element.addSafeAttribute(name: "font", value: titleStyle.fontName)
+        textStyle2Element.addSafeAttribute(name: "fontSize", value: String(Int(titleStyle.fontSize)))
+        textStyle2Element.addSafeAttribute(name: "fontFace", value: titleStyle.fontWeight.rawValue)
+        textStyle2Element.addSafeAttribute(name: "fontColor", value: titleStyle.textColor.toFCPXMLString())
+
+        // Bold attribute for semibold or bold weight
+        if titleStyle.fontWeight == .semibold || titleStyle.fontWeight == .bold {
             textStyle2Element.addSafeAttribute(name: "bold", value: "1")
-            textStyle2Element.addSafeAttribute(name: "shadowColor", value: "0 0 0 0.75")
-            textStyle2Element.addSafeAttribute(name: "shadowOffset", value: "4 315")
-            textStyle2Element.addSafeAttribute(name: "alignment", value: "center")
-        } else {
-            textStyle2Element.addSafeAttribute(name: "font", value: "Helvetica")
-            textStyle2Element.addSafeAttribute(name: "fontSize", value: "45")
-            textStyle2Element.addSafeAttribute(name: "fontFace", value: "Regular")
-            textStyle2Element.addSafeAttribute(name: "fontColor", value: "1 1 1 1")
-            textStyle2Element.addSafeAttribute(name: "shadowColor", value: "0 0 0 0.75")
-            textStyle2Element.addSafeAttribute(name: "shadowOffset", value: "4 315")
-            textStyle2Element.addSafeAttribute(name: "alignment", value: "center")
         }
+
+        // Stroke settings (only if enabled)
+        if titleStyle.strokeEnabled && titleStyle.strokeWidth > 0 {
+            textStyle2Element.addSafeAttribute(name: "strokeColor", value: titleStyle.strokeColor.toFCPXMLString())
+            textStyle2Element.addSafeAttribute(name: "strokeWidth", value: String(Int(titleStyle.strokeWidth)))
+        }
+
+        // Shadow settings
+        textStyle2Element.addSafeAttribute(name: "shadowColor", value: titleStyle.shadowColor.toFCPXMLString())
+        textStyle2Element.addSafeAttribute(name: "shadowOffset", value: titleStyle.shadowOffsetString)
+
+        // Alignment
+        textStyle2Element.addSafeAttribute(name: "alignment", value: titleStyle.alignment.fcpxmlStyleValue)
+
         textStyleDefElement.addChild(textStyle2Element)
 
         return titleElement

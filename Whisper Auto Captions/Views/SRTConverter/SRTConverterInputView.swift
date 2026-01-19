@@ -112,6 +112,17 @@ struct SRTConverterInputView: View {
                     .frame(alignment: .leading)
                 }
 
+                // Title Style Settings
+                GridRow {
+                    TitleStyleSettingsView(
+                        titleStyle: $viewModel.titleStyle,
+                        isExpanded: $viewModel.showTitleStyleSettings,
+                        availableFonts: viewModel.availableFonts,
+                        currentHeight: viewModel.currentHeight
+                    )
+                }
+                .gridCellColumns(2)
+
                 // Convert Button
                 GridRow {
                     Button(action: {
