@@ -35,7 +35,7 @@ class HomeViewModel: ObservableObject {
     @Published var totalBatch = 100000
     @Published var currentBatch = -100000
     @Published var remainingTime = "00:00"
-    @Published var status = "Spliting audio file by every 10 minutes···"
+    @Published var status = "Splitting audio file..."
     @Published var outputCaptions = ""
     @Published var outputSRTFilePath = ""
     @Published var outputFCPXMLFilePath = ""
@@ -177,14 +177,15 @@ class HomeViewModel: ObservableObject {
         let filePathString = fileURL.path
         let tempFolder = NSTemporaryDirectory()
 
-        // Use AudioService for conversion
-        let outputWavFilePath = AudioService.shared.mp3ToWav(
-            filePathString: filePathString,
+        // Prepare audio for whisper.cpp (converts to 16kHz WAV if needed)
+        let outputWavFilePath = AudioService.shared.prepareAudioForWhisper(
+            inputPath: filePathString,
             projectName: projectName,
             tempFolder: tempFolder
         )
 
-        let splitedWavFilesPaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath)
+        let segmentDuration = Double(SettingsManager.shared.settings.audioSegmentDuration)
+        let splitedWavFilesPaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: segmentDuration)
         self.totalBatch = splitedWavFilesPaths.count
         self.status = "Generating AI subtitles"
 
@@ -347,7 +348,7 @@ class HomeViewModel: ObservableObject {
         outputFCPXMLFilePath = ""
         totalBatch = 100000
         currentBatch = -100000
-        status = "Spliting audio file by every 10 minutes···"
+        status = "Splitting audio file..."
     }
     
     // MARK: - Model Validation

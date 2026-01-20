@@ -39,6 +39,12 @@ struct WhisperSettings: Codable, Equatable {
     var flashAttention: Bool = false
 
     // MARK: - Output Settings
+    /// Audio segment duration in seconds for splitting long files (default: 600 = 10 minutes)
+    var audioSegmentDuration: Int = 600
+    /// Use custom audio segment duration instead of preset
+    var useCustomSegmentDuration: Bool = false
+    /// Custom audio segment duration in minutes (1-30)
+    var customSegmentDurationMinutes: Int = 10
     /// Maximum segment length in characters (0 = no limit)
     var maxLen: Int = 0
     /// Split segments on word boundaries

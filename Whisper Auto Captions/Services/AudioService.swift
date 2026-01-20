@@ -15,11 +15,42 @@ class AudioService {
     private init() {}
 
     // MARK: - Constants
-    private let segmentDuration: Double = 600  // 10 minutes in seconds
+    private let whisperSampleRate: Double = 16000  // Required sample rate for whisper.cpp
 
-    // MARK: - MP3 to WAV Conversion
-    /// Convert MP3 file to 16kHz WAV format required by whisper.cpp
-    func mp3ToWav(filePathString: String, projectName: String, tempFolder: String) -> String {
+    // MARK: - Audio Analysis
+
+    /// Get the sample rate of an audio file
+    func getAudioSampleRate(_ path: String) -> Double? {
+        let url = URL(fileURLWithPath: path)
+        guard let audioFile = try? AVAudioFile(forReading: url) else { return nil }
+        return audioFile.processingFormat.sampleRate
+    }
+
+    /// Check if the audio file needs conversion for whisper.cpp
+    /// Returns false only if it's already a 16kHz WAV file
+    func needsConversion(_ path: String) -> Bool {
+        // Not a WAV file -> needs conversion
+        guard path.lowercased().hasSuffix(".wav") else { return true }
+
+        // Check sample rate - must be 16kHz for whisper.cpp
+        guard let sampleRate = getAudioSampleRate(path),
+              sampleRate == whisperSampleRate else { return true }
+
+        return false
+    }
+
+    // MARK: - Audio Preparation
+
+    /// Prepare input audio file for whisper.cpp processing
+    /// - If input is already a 16kHz WAV, returns the original path (no conversion)
+    /// - Otherwise, converts to 16kHz mono WAV using ffmpeg
+    func prepareAudioForWhisper(inputPath: String, projectName: String, tempFolder: String) -> String {
+        // Skip conversion if already a 16kHz WAV file
+        if !needsConversion(inputPath) {
+            return inputPath
+        }
+
+        // Generate output path
         var wavFileName = projectName + ".wav"
         var wavFilePath = tempFolder + wavFileName
 
@@ -38,9 +69,10 @@ class AudioService {
             return wavFilePath
         }
 
+        // Convert to 16kHz mono 16-bit PCM WAV
         let task = Process()
         task.launchPath = ffmpegPath
-        task.arguments = ["-i", filePathString, "-ar", "16000", wavFilePath]
+        task.arguments = ["-i", inputPath, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wavFilePath]
         task.launch()
         task.waitUntilExit()
 
@@ -48,8 +80,12 @@ class AudioService {
     }
 
     // MARK: - Split WAV File
-    /// Split a WAV file into 10-minute segments for processing
-    func splitWav(inputFilePath: String) -> [String] {
+    /// Split a WAV file into segments for processing
+    /// - Parameters:
+    ///   - inputFilePath: Path to the input WAV file
+    ///   - segmentDuration: Duration of each segment in seconds (default: 600 = 10 minutes)
+    /// - Returns: Array of paths to the split WAV files
+    func splitWav(inputFilePath: String, segmentDuration: Double = 600) -> [String] {
         var result: [String] = []
 
         let fileURL = URL(fileURLWithPath: inputFilePath)
