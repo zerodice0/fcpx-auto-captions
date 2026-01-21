@@ -14,6 +14,8 @@ struct TitleStyleSettingsView: View {
     let availableFonts: [String]
     let currentHeight: Int
 
+    private let labelWidth: CGFloat = 60
+
     var body: some View {
         DisclosureGroup(
             isExpanded: $isExpanded,
@@ -46,32 +48,42 @@ struct TitleStyleSettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Picker(selection: $titleStyle.positionPreset, label: EmptyView()) {
-                ForEach(PositionPreset.allCases) { preset in
-                    Text(preset.displayName).tag(preset)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
-            .frame(maxWidth: 200)
-            .onChange(of: titleStyle.positionPreset) { newPreset in
-                if newPreset != .custom {
-                    titleStyle.updatePositionFromPreset(height: currentHeight)
-                }
-            }
-
-            if titleStyle.positionPreset == .custom {
-                HStack(spacing: 16) {
-                    HStack(spacing: 4) {
-                        Text("X:")
-                        TextField("0", value: $titleStyle.positionX, formatter: NumberFormatter())
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 70)
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+                GridRow {
+                    Text(String(localized: "Preset:", comment: "Position preset label"))
+                        .frame(width: labelWidth, alignment: .trailing)
+                    Picker(selection: $titleStyle.positionPreset, label: EmptyView()) {
+                        ForEach(PositionPreset.allCases) { preset in
+                            Text(preset.displayName).tag(preset)
+                        }
                     }
-                    HStack(spacing: 4) {
-                        Text("Y:")
-                        TextField("0", value: $titleStyle.positionY, formatter: NumberFormatter())
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 70)
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: 200)
+                    .onChange(of: titleStyle.positionPreset) { newPreset in
+                        if newPreset != .custom {
+                            titleStyle.updatePositionFromPreset(height: currentHeight)
+                        }
+                    }
+                }
+
+                if titleStyle.positionPreset == .custom {
+                    GridRow {
+                        Text(String(localized: "Offset:", comment: "Position offset label"))
+                            .frame(width: labelWidth, alignment: .trailing)
+                        HStack(spacing: 16) {
+                            HStack(spacing: 4) {
+                                Text("X:")
+                                TextField("0", value: $titleStyle.positionX, formatter: NumberFormatter())
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                            }
+                            HStack(spacing: 4) {
+                                Text("Y:")
+                                TextField("0", value: $titleStyle.positionY, formatter: NumberFormatter())
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                            }
+                        }
                     }
                 }
             }
@@ -85,33 +97,42 @@ struct TitleStyleSettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 16) {
-                Picker(selection: $titleStyle.fontName, label: EmptyView()) {
-                    ForEach(availableFonts, id: \.self) { font in
-                        Text(font).tag(font)
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
+                // Font Family and Size
+                GridRow {
+                    Text(String(localized: "Family:", comment: "Font family label"))
+                        .frame(width: labelWidth, alignment: .trailing)
+                    HStack(spacing: 16) {
+                        Picker(selection: $titleStyle.fontName, label: EmptyView()) {
+                            ForEach(availableFonts, id: \.self) { font in
+                                Text(font).tag(font)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: 180)
+
+                        HStack(spacing: 4) {
+                            Text(String(localized: "Size:", comment: "Font size label"))
+                            TextField("45", value: $titleStyle.fontSize, formatter: NumberFormatter())
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 50)
+                            Text("pt")
+                        }
                     }
                 }
-                .pickerStyle(MenuPickerStyle())
-                .frame(maxWidth: 180)
 
-                HStack(spacing: 4) {
-                    Text(String(localized: "Size:", comment: "Font size label"))
-                    TextField("45", value: $titleStyle.fontSize, formatter: NumberFormatter())
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(width: 50)
-                    Text("pt")
-                }
-            }
-
-            HStack(spacing: 16) {
-                Text(String(localized: "Weight:", comment: "Font weight label"))
-                Picker(selection: $titleStyle.fontWeight, label: EmptyView()) {
-                    ForEach(TitleFontWeight.allCases) { weight in
-                        Text(weight.displayName).tag(weight)
+                // Font Weight
+                GridRow {
+                    Text(String(localized: "Weight:", comment: "Font weight label"))
+                        .frame(width: labelWidth, alignment: .trailing)
+                    Picker(selection: $titleStyle.fontWeight, label: EmptyView()) {
+                        ForEach(TitleFontWeight.allCases) { weight in
+                            Text(weight.displayName).tag(weight)
+                        }
                     }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: 120)
                 }
-                .pickerStyle(MenuPickerStyle())
-                .frame(maxWidth: 120)
             }
         }
     }
@@ -127,7 +148,7 @@ struct TitleStyleSettingsView: View {
                 // Text Color
                 GridRow {
                     Text(String(localized: "Text:", comment: "Text color label"))
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: labelWidth, alignment: .trailing)
                     ColorPicker("", selection: textColorBinding)
                         .labelsHidden()
                 }
@@ -135,7 +156,7 @@ struct TitleStyleSettingsView: View {
                 // Stroke
                 GridRow {
                     Text(String(localized: "Stroke:", comment: "Stroke label"))
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: labelWidth, alignment: .trailing)
                     HStack(spacing: 8) {
                         Toggle("", isOn: $titleStyle.strokeEnabled)
                             .labelsHidden()
@@ -156,7 +177,7 @@ struct TitleStyleSettingsView: View {
                 // Shadow
                 GridRow {
                     Text(String(localized: "Shadow:", comment: "Shadow label"))
-                        .frame(width: 60, alignment: .trailing)
+                        .frame(width: labelWidth, alignment: .trailing)
                     HStack(spacing: 8) {
                         ColorPicker("", selection: shadowColorBinding)
                             .labelsHidden()
