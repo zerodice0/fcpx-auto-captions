@@ -60,29 +60,4 @@ enum AppDirectoryUtility {
         }
         return FileManager.default.fileExists(atPath: modelPath.path)
     }
-    
-    /// Get the size of a downloaded model file
-    /// - Parameter model: Model name to check
-    /// - Returns: File size in bytes, or nil if file doesn't exist
-    static func getModelSize(_ model: String) -> Int64? {
-        guard let modelPath = try? getModelPath(for: model),
-              let attrs = try? FileManager.default.attributesOfItem(atPath: modelPath.path),
-              let size = attrs[.size] as? Int64 else {
-            return nil
-        }
-        return size
-    }
-    
-    /// Minimum valid model file size (50MB) - smallest model is ~75MB
-    static let minimumValidModelSize: Int64 = 50 * 1024 * 1024
-    
-    /// Check if a model file is valid (exists and has sufficient size)
-    /// - Parameter model: Model name to check
-    /// - Returns: true if model exists and is valid
-    static func isModelValid(_ model: String) -> Bool {
-        guard let size = getModelSize(model) else {
-            return false
-        }
-        return size >= minimumValidModelSize
-    }
 }

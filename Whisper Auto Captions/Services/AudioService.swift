@@ -127,23 +127,4 @@ class AudioService {
 
         return result
     }
-
-    // MARK: - Get Audio Duration
-    /// Get the duration of an audio file in seconds
-    func getAudioDuration(filePath: String) -> TimeInterval? {
-        let fileURL = URL(fileURLWithPath: filePath)
-        guard let asset = try? AVAudioPlayer(contentsOf: fileURL) else {
-            return nil
-        }
-        return asset.duration
-    }
-
-    // MARK: - Cleanup
-    /// Remove temporary WAV files
-    func cleanupTempFiles(paths: [String]) {
-        let fileManager = FileManager.default
-        for path in paths {
-            try? fileManager.removeItem(atPath: path)
-        }
-    }
 }

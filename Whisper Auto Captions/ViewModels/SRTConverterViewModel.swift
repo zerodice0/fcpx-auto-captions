@@ -1,12 +1,10 @@
 import Foundation
 import SwiftUI
-import Combine
 
 // MARK: - SRT Converter ViewModel
 class SRTConverterViewModel: ObservableObject {
     // MARK: - Dependencies
     private let settingsManager = SettingsManager.shared
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Published Properties
     @Published var srtFileURL: URL?
@@ -153,7 +151,7 @@ class SRTConverterViewModel: ObservableObject {
 
     /// Update font settings based on selected language
     private func updateFontForLanguage() {
-        if selectedLanguage == "Chinese" {
+        if selectedLanguage.contains("Chinese") {
             titleStyle.fontName = "PingFang SC"
             titleStyle.fontSize = 50
             titleStyle.fontWeight = .semibold

@@ -69,11 +69,6 @@ struct WhisperSettings: Codable, Equatable {
     // MARK: - Default Instance
     static let `default` = WhisperSettings()
 
-    // MARK: - Comparison with defaults
-    var isDefault: Bool {
-        return self == WhisperSettings.default
-    }
-
     // MARK: - Reset to defaults
     mutating func resetToDefaults() {
         self = WhisperSettings.default

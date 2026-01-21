@@ -17,27 +17,6 @@ enum KeychainService {
         case geminiApiKey = "gemini_api_key"
     }
 
-    // MARK: - Errors
-    enum KeychainError: Error, LocalizedError {
-        case duplicateItem
-        case itemNotFound
-        case unexpectedStatus(OSStatus)
-        case invalidData
-
-        var errorDescription: String? {
-            switch self {
-            case .duplicateItem:
-                return "Item already exists in Keychain"
-            case .itemNotFound:
-                return "Item not found in Keychain"
-            case .unexpectedStatus(let status):
-                return "Keychain error: \(status)"
-            case .invalidData:
-                return "Invalid data format"
-            }
-        }
-    }
-
     // MARK: - Public Methods
 
     /// Save a value to the Keychain
@@ -110,35 +89,5 @@ enum KeychainService {
     /// - Returns: True if the key exists
     static func exists(_ key: KeychainKey) -> Bool {
         return retrieve(key) != nil
-    }
-
-    /// Update an existing value in the Keychain
-    /// - Parameters:
-    ///   - value: The new value
-    ///   - key: The key to update
-    /// - Returns: True if successful
-    @discardableResult
-    static func update(_ value: String, for key: KeychainKey) -> Bool {
-        guard let data = value.data(using: .utf8) else {
-            return false
-        }
-
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: key.rawValue
-        ]
-
-        let attributes: [String: Any] = [
-            kSecValueData as String: data
-        ]
-
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-
-        if status == errSecItemNotFound {
-            return save(value, for: key)
-        }
-
-        return status == errSecSuccess
     }
 }

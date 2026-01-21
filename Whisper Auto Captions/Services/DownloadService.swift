@@ -108,21 +108,4 @@ class DownloadService: NSObject, ObservableObject {
         return try? AppDirectoryUtility.getModelPath(for: model)
     }
 
-    // MARK: - Delete Model
-    func deleteModel(_ model: String) -> Bool {
-        guard let modelPath = getModelPath(for: model) else {
-            return false
-        }
-        do {
-            try FileManager.default.removeItem(at: modelPath)
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    // MARK: - Get Downloaded Models
-    func getDownloadedModels() -> [String] {
-        return ModelData.models.filter { isModelDownloaded($0) }
-    }
 }

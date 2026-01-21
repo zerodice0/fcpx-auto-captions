@@ -196,13 +196,4 @@ class WhisperService {
             completion(srtFilePath)
         }
     }
-
-    // MARK: - Model Path
-    func getModelPath(for model: String) -> URL? {
-        return try? AppDirectoryUtility.getModelPath(for: model)
-    }
-
-    func isModelDownloaded(_ model: String) -> Bool {
-        return AppDirectoryUtility.isModelDownloaded(model)
-    }
 }

@@ -34,30 +34,11 @@ struct HomeView: View {
                 // Frame Rate Selection
                 GridRow {
                     Text(String(localized: "Frame Rate:", comment: "Frame rate label"))
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker(selection: $viewModel.selectedFrameRate, label: EmptyView()) {
-                            ForEach(FrameRate.allCases) { frameRate in
-                                Text(frameRate.displayName).tag(frameRate)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(alignment: .leading)
-
-                        if viewModel.selectedFrameRate == .custom {
-                            HStack(spacing: 8) {
-                                TextField("fps", text: $viewModel.customFps)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .frame(width: 70)
-                                Text("fps")
-                            }
-
-                            if !viewModel.isFpsValid {
-                                Text(String(localized: "Frame rate must be between 0 and 120", comment: "Invalid frame rate warning"))
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
+                    FrameRatePicker(
+                        selectedFrameRate: $viewModel.selectedFrameRate,
+                        customFps: $viewModel.customFps,
+                        isFpsValid: viewModel.isFpsValid
+                    )
                 }
 
                 // Model Selection

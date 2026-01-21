@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 // MARK: - XMLElement Extension for Safe Attribute Handling
 private extension XMLElement {
@@ -305,6 +306,27 @@ struct FCPXMLService {
         textStyleDefElement.addChild(textStyle2Element)
 
         return titleElement
+    }
+
+    // MARK: - Open in Final Cut Pro
+
+    /// Opens an FCPXML file in Final Cut Pro using AppleScript
+    /// - Parameter fcpxmlPath: The file path to the FCPXML file
+    static func openInFinalCutPro(fcpxmlPath: String) {
+        let command =
+        """
+        tell application "Final Cut Pro"
+            launch
+            activate
+            open POSIX file "\(fcpxmlPath)"
+        end tell
+        """
+        DispatchQueue.global(qos: .background).async {
+            var error: NSDictionary?
+            if let scriptObject = NSAppleScript(source: command) {
+                _ = scriptObject.executeAndReturnError(&error)
+            }
+        }
     }
 }
 

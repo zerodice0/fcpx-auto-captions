@@ -37,21 +37,7 @@ struct SRTConverterResultView: View {
                 .controlSize(.large)
                 .tint(.blue)
 
-                Button(action: {
-                    ProcessViewModel.openInFinalCutPro(fcpxmlPath: viewModel.outputFCPXMLFilePath)
-                }) {
-                    if let imagePath = Bundle.main.path(forResource: "fcpx-icon", ofType: "png"),
-                       let nsImage = NSImage(contentsOfFile: imagePath) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: nsImage.size.width * 0.05, height: nsImage.size.height * 0.05)
-                    }
-                    Text("Open in Final Cut Pro")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.gray)
+                OpenInFinalCutProButton(fcpxmlPath: viewModel.outputFCPXMLFilePath)
             }
 
             // Reset Button

@@ -166,16 +166,6 @@ struct TitleStyleSettings: Codable, Equatable {
     // MARK: - Default Instance
     static let `default` = TitleStyleSettings()
 
-    // MARK: - Chinese Default
-    /// Default settings for Chinese language
-    static let chineseDefault: TitleStyleSettings = {
-        var settings = TitleStyleSettings()
-        settings.fontName = "PingFang SC"
-        settings.fontSize = 50
-        settings.fontWeight = .semibold
-        return settings
-    }()
-
     // MARK: - Methods
 
     /// Update position based on preset and resolution

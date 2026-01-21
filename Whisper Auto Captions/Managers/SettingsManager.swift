@@ -132,17 +132,6 @@ class SettingsManager: ObservableObject {
         set { settings.fps = newValue }
     }
 
-    // MARK: - Settings Window State
-    @Published var isSettingsWindowOpen = false
-
-    func openSettings() {
-        isSettingsWindowOpen = true
-    }
-
-    func closeSettings() {
-        isSettingsWindowOpen = false
-    }
-
     // MARK: - Settings Summary
     /// Returns a summary text describing the current settings
     var settingsSummary: String {
@@ -154,17 +143,5 @@ class SettingsManager: ObservableObject {
     /// Returns the display name for the current preset
     var presetDisplayName: String {
         currentPreset.displayName
-    }
-}
-
-// MARK: - Environment Key
-struct SettingsManagerKey: EnvironmentKey {
-    static let defaultValue: SettingsManager = SettingsManager.shared
-}
-
-extension EnvironmentValues {
-    var settingsManager: SettingsManager {
-        get { self[SettingsManagerKey.self] }
-        set { self[SettingsManagerKey.self] = newValue }
     }
 }

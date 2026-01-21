@@ -109,21 +109,10 @@ struct ProcessView: View {
                 HStack {
                     Text("Open in Final Cut Pro: ")
                         .font(.title2)
-                    Button(action: {
-                        ProcessViewModel.openInFinalCutPro(fcpxmlPath: viewModel.outputFCPXMLFilePath)
-                    }) {
-                        if let imagePath = Bundle.main.path(forResource: "fcpx-icon", ofType: "png"),
-                           let nsImage = NSImage(contentsOfFile: imagePath) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: nsImage.size.width * 0.05, height: nsImage.size.height * 0.05)
-                        }
-                        Text("Click here to check auto captions in Final Cut Pro X")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(.gray)
+                    OpenInFinalCutProButton(
+                        fcpxmlPath: viewModel.outputFCPXMLFilePath,
+                        label: "Click here to check auto captions in Final Cut Pro X"
+                    )
                     .disabled(!isProcessingComplete)
                 }
                 .padding()
