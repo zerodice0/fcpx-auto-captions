@@ -13,9 +13,8 @@ struct SRTConverterInputView: View {
     @ObservedObject var viewModel: SRTConverterViewModel
 
     var body: some View {
-        ScrollView {
-            VStack {
-                Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
+        VStack {
+            Grid(alignment: .leadingFirstTextBaseline, verticalSpacing: 20) {
                     // SRT File Selection
                     GridRow {
                         Text(String(localized: "SRT File:", comment: "SRT file label"))
@@ -148,7 +147,6 @@ struct SRTConverterInputView: View {
                 }
                 .padding()
             }
-        }
         .sheet(isPresented: $viewModel.showTitleStyleSettings) {
             TitleStyleSettingsView(
                 viewModel: viewModel,
