@@ -115,22 +115,31 @@ struct SRTConverterInputView: View {
 
                     // Title Style Settings
                     GridRow {
-                        TitleStyleSettingsView(
-                            titleStyle: $viewModel.titleStyle,
-                            isExpanded: $viewModel.showTitleStyleSettings,
-                            availableFonts: viewModel.availableFonts,
-                            currentHeight: viewModel.currentHeight
-                        )
+                        Text(String(localized: "Title Style:", comment: "Title style label"))
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Text(viewModel.titleStyleSummary)
+                                    .fontWeight(.medium)
+
+                                Button(action: { viewModel.showTitleStyleSettings = true }) {
+                                    Image(systemName: "gear")
+                                        .font(.system(size: 12))
+                                }
+                                .buttonStyle(.borderless)
+                                .help(String(localized: "Configure title style", comment: "Title style settings button tooltip"))
+                            }
+
+                            Text(viewModel.titleStyleDetails)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
-                    .gridCellColumns(2)
 
                     // Convert Button
                     GridRow {
-                        Button(action: {
-                            viewModel.convertSRTtoFCPXML()
-                        }, label: {
+                        Button(action: viewModel.convertSRTtoFCPXML) {
                             Text(String(localized: "Convert to FCPXML", comment: "Convert button label"))
-                        })
+                        }
                         .buttonStyle(BorderedProminentButtonStyle())
                         .gridCellAnchor(.center)
                         .disabled(!viewModel.canConvert)
@@ -140,11 +149,17 @@ struct SRTConverterInputView: View {
                 .padding()
             }
         }
+        .sheet(isPresented: $viewModel.showTitleStyleSettings) {
+            TitleStyleSettingsView(
+                viewModel: viewModel,
+                availableFonts: viewModel.availableFonts
+            )
+        }
         #if DEBUG
         .enableInjection()
         #endif
     }
-    
+
     // MARK: - Actions
     private func selectFile() {
         var allowedTypes: [UTType] = []

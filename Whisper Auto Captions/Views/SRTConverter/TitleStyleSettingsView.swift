@@ -3,23 +3,57 @@ import SwiftUI
 import Inject
 #endif
 
-// MARK: - Title Style Settings View
+// MARK: - Title Style Settings View (Popup)
 struct TitleStyleSettingsView: View {
     #if DEBUG
     @ObserveInjection var inject
     #endif
 
-    @Binding var titleStyle: TitleStyleSettings
-    @Binding var isExpanded: Bool
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var viewModel: SRTConverterViewModel
     let availableFonts: [String]
-    let currentHeight: Int
 
-    private let labelWidth: CGFloat = 60
+    // 로컬 편집용 상태 (View 업데이트 중 publishing 방지)
+    @State private var localTitleStyle: TitleStyleSettings
+
+    private let labelWidth: CGFloat = 70
+
+    init(viewModel: SRTConverterViewModel, availableFonts: [String]) {
+        self.viewModel = viewModel
+        self.availableFonts = availableFonts
+        // 초기값으로 ViewModel의 현재 값 복사
+        _localTitleStyle = State(initialValue: viewModel.titleStyle)
+    }
+
+    // MARK: - Position Preset Binding (delegates to ViewModel)
+    private var positionPresetBinding: Binding<PositionPreset> {
+        Binding(
+            get: { localTitleStyle.positionPreset },
+            set: { newPreset in
+                localTitleStyle.positionPreset = newPreset
+                // Position 값 업데이트 (ViewModel의 로직 활용)
+                let (x, y) = viewModel.calculatePositionForPreset(newPreset)
+                localTitleStyle.positionX = x
+                localTitleStyle.positionY = y
+            }
+        )
+    }
 
     var body: some View {
-        DisclosureGroup(
-            isExpanded: $isExpanded,
-            content: {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text(String(localized: "Title Style", comment: "Title style popup header"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            .padding()
+
+            Divider()
+
+            // Content
+            ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     positionSection
                     Divider()
@@ -29,13 +63,22 @@ struct TitleStyleSettingsView: View {
                     Divider()
                     alignmentSection
                 }
-                .padding(.top, 8)
-            },
-            label: {
-                Text(String(localized: "Title Style", comment: "Title style section header"))
-                    .font(.headline)
+                .padding()
             }
-        )
+
+            Divider()
+
+            // Footer
+            HStack {
+                Spacer()
+                Button(String(localized: "Done", comment: "Done button")) {
+                    saveAndDismiss()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
+        }
+        .frame(minWidth: 450, minHeight: 500)
         #if DEBUG
         .enableInjection()
         #endif
@@ -52,34 +95,29 @@ struct TitleStyleSettingsView: View {
                 GridRow {
                     Text(String(localized: "Preset:", comment: "Position preset label"))
                         .frame(width: labelWidth, alignment: .trailing)
-                    Picker(selection: $titleStyle.positionPreset, label: EmptyView()) {
+                    Picker(selection: positionPresetBinding, label: EmptyView()) {
                         ForEach(PositionPreset.allCases) { preset in
                             Text(preset.displayName).tag(preset)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
                     .frame(maxWidth: 200)
-                    .onChange(of: titleStyle.positionPreset) { newPreset in
-                        if newPreset != .custom {
-                            titleStyle.updatePositionFromPreset(height: currentHeight)
-                        }
-                    }
                 }
 
-                if titleStyle.positionPreset == .custom {
+                if localTitleStyle.positionPreset == .custom {
                     GridRow {
                         Text(String(localized: "Offset:", comment: "Position offset label"))
                             .frame(width: labelWidth, alignment: .trailing)
                         HStack(spacing: 16) {
                             HStack(spacing: 4) {
                                 Text("X:")
-                                TextField("0", value: $titleStyle.positionX, formatter: NumberFormatter())
+                                TextField("0", value: $localTitleStyle.positionX, formatter: NumberFormatter())
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 70)
                             }
                             HStack(spacing: 4) {
                                 Text("Y:")
-                                TextField("0", value: $titleStyle.positionY, formatter: NumberFormatter())
+                                TextField("0", value: $localTitleStyle.positionY, formatter: NumberFormatter())
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 70)
                             }
@@ -103,7 +141,7 @@ struct TitleStyleSettingsView: View {
                     Text(String(localized: "Family:", comment: "Font family label"))
                         .frame(width: labelWidth, alignment: .trailing)
                     HStack(spacing: 16) {
-                        Picker(selection: $titleStyle.fontName, label: EmptyView()) {
+                        Picker(selection: $localTitleStyle.fontName, label: EmptyView()) {
                             ForEach(availableFonts, id: \.self) { font in
                                 Text(font).tag(font)
                             }
@@ -113,7 +151,7 @@ struct TitleStyleSettingsView: View {
 
                         HStack(spacing: 4) {
                             Text(String(localized: "Size:", comment: "Font size label"))
-                            TextField("45", value: $titleStyle.fontSize, formatter: NumberFormatter())
+                            TextField("45", value: $localTitleStyle.fontSize, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 50)
                             Text("pt")
@@ -125,7 +163,7 @@ struct TitleStyleSettingsView: View {
                 GridRow {
                     Text(String(localized: "Weight:", comment: "Font weight label"))
                         .frame(width: labelWidth, alignment: .trailing)
-                    Picker(selection: $titleStyle.fontWeight, label: EmptyView()) {
+                    Picker(selection: $localTitleStyle.fontWeight, label: EmptyView()) {
                         ForEach(TitleFontWeight.allCases) { weight in
                             Text(weight.displayName).tag(weight)
                         }
@@ -158,14 +196,14 @@ struct TitleStyleSettingsView: View {
                     Text(String(localized: "Stroke:", comment: "Stroke label"))
                         .frame(width: labelWidth, alignment: .trailing)
                     HStack(spacing: 8) {
-                        Toggle("", isOn: $titleStyle.strokeEnabled)
+                        Toggle("", isOn: $localTitleStyle.strokeEnabled)
                             .labelsHidden()
                             .toggleStyle(.checkbox)
-                        if titleStyle.strokeEnabled {
+                        if localTitleStyle.strokeEnabled {
                             ColorPicker("", selection: strokeColorBinding)
                                 .labelsHidden()
                             HStack(spacing: 4) {
-                                TextField("2", value: $titleStyle.strokeWidth, formatter: NumberFormatter())
+                                TextField("2", value: $localTitleStyle.strokeWidth, formatter: NumberFormatter())
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 40)
                                 Text("pt")
@@ -183,13 +221,13 @@ struct TitleStyleSettingsView: View {
                             .labelsHidden()
                         HStack(spacing: 4) {
                             Text("X:")
-                            TextField("4", value: $titleStyle.shadowOffsetX, formatter: NumberFormatter())
+                            TextField("4", value: $localTitleStyle.shadowOffsetX, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 40)
                         }
                         HStack(spacing: 4) {
                             Text("Y:")
-                            TextField("315", value: $titleStyle.shadowOffsetY, formatter: NumberFormatter())
+                            TextField("315", value: $localTitleStyle.shadowOffsetY, formatter: NumberFormatter())
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 40)
                         }
@@ -206,7 +244,7 @@ struct TitleStyleSettingsView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Picker(selection: $titleStyle.alignment, label: EmptyView()) {
+            Picker(selection: $localTitleStyle.alignment, label: EmptyView()) {
                 ForEach(TitleTextAlignment.allCases) { alignment in
                     Text(alignment.displayName).tag(alignment)
                 }
@@ -220,22 +258,29 @@ struct TitleStyleSettingsView: View {
 
     private var textColorBinding: Binding<Color> {
         Binding(
-            get: { titleStyle.textColor.color },
-            set: { titleStyle.textColor = CodableColor(color: NSColor($0)) }
+            get: { localTitleStyle.textColor.color },
+            set: { localTitleStyle.textColor = CodableColor(color: NSColor($0)) }
         )
     }
 
     private var strokeColorBinding: Binding<Color> {
         Binding(
-            get: { titleStyle.strokeColor.color },
-            set: { titleStyle.strokeColor = CodableColor(color: NSColor($0)) }
+            get: { localTitleStyle.strokeColor.color },
+            set: { localTitleStyle.strokeColor = CodableColor(color: NSColor($0)) }
         )
     }
 
     private var shadowColorBinding: Binding<Color> {
         Binding(
-            get: { titleStyle.shadowColor.color },
-            set: { titleStyle.shadowColor = CodableColor(color: NSColor($0)) }
+            get: { localTitleStyle.shadowColor.color },
+            set: { localTitleStyle.shadowColor = CodableColor(color: NSColor($0)) }
         )
+    }
+
+    // MARK: - Actions
+
+    private func saveAndDismiss() {
+        viewModel.titleStyle = localTitleStyle
+        dismiss()
     }
 }

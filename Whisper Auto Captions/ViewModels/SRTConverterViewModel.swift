@@ -40,22 +40,40 @@ class SRTConverterViewModel: ObservableObject {
     @Published var customFps: String = "30"
 
     // Title style settings (synced with SettingsManager)
-    @Published var titleStyle: TitleStyleSettings = .default {
+    @Published var titleStyle: TitleStyleSettings = .default
+
+    @Published var showTitleStyleSettings: Bool = false {
         didSet {
-            // When preset changes, update position based on resolution
-            if oldValue.positionPreset != titleStyle.positionPreset {
-                titleStyle.updatePositionFromPreset(height: currentHeight)
+            // Save when dialog closes (outside of view update cycle)
+            if !showTitleStyleSettings && oldValue {
+                settingsManager.titleStyleSettings = titleStyle
             }
-            // Persist to SettingsManager
-            settingsManager.titleStyleSettings = titleStyle
         }
     }
-    @Published var showTitleStyleSettings: Bool = false
+
+    // Cached font list (loaded asynchronously to avoid UI blocking)
+    @Published private(set) var availableFonts: [String] = []
 
     // MARK: - Initialization
     init() {
         // Load saved title style settings
         titleStyle = settingsManager.titleStyleSettings
+
+        // Load font list in background to avoid blocking UI
+        loadFontsAsync()
+    }
+
+    /// Load system fonts asynchronously
+    private func loadFontsAsync() {
+        Task {
+            let fonts = await Task.detached(priority: .userInitiated) {
+                NSFontManager.shared.availableFontFamilies.sorted()
+            }.value
+
+            await MainActor.run { [weak self] in
+                self?.availableFonts = fonts
+            }
+        }
     }
     
     // MARK: - Languages
@@ -100,6 +118,21 @@ class SRTConverterViewModel: ObservableObject {
     
     var canConvert: Bool {
         return srtFileURL != nil && !projectName.isEmpty && isResolutionValid && isFpsValid
+    }
+
+    // MARK: - Title Style Summary (for display in main view)
+
+    /// Summary text for title style (e.g., "Helvetica, 45pt")
+    var titleStyleSummary: String {
+        return "\(titleStyle.fontName), \(Int(titleStyle.fontSize))pt"
+    }
+
+    /// Detail text for title style (e.g., "Bottom Center | Center | Regular")
+    var titleStyleDetails: String {
+        let position = titleStyle.positionPreset.displayName
+        let alignment = titleStyle.alignment.displayName
+        let weight = titleStyle.fontWeight.displayName
+        return "\(position) | \(alignment) | \(weight)"
     }
     
     // MARK: - File Selection
@@ -149,6 +182,11 @@ class SRTConverterViewModel: ObservableObject {
         titleStyle.updatePositionFromPreset(height: currentHeight)
     }
 
+    /// Calculate position values for a preset (for local state in View)
+    func calculatePositionForPreset(_ preset: PositionPreset) -> (x: CGFloat, y: CGFloat) {
+        return preset.position(for: currentHeight)
+    }
+
     /// Update font settings based on selected language
     private func updateFontForLanguage() {
         if selectedLanguage.contains("Chinese") {
@@ -158,8 +196,4 @@ class SRTConverterViewModel: ObservableObject {
         }
     }
 
-    /// Get available system fonts
-    var availableFonts: [String] {
-        NSFontManager.shared.availableFontFamilies.sorted()
-    }
 }

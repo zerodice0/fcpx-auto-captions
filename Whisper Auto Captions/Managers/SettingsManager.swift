@@ -17,7 +17,9 @@ class SettingsManager: ObservableObject {
     @Published var settings: WhisperSettings {
         didSet {
             saveSettings()
-            updatePreset()
+            if !isUpdatingFromPreset {
+                updatePreset()
+            }
         }
     }
 
@@ -45,6 +47,9 @@ class SettingsManager: ObservableObject {
 
     // MARK: - UserDefaults
     private let defaults = UserDefaults.standard
+
+    // MARK: - Circular Update Prevention
+    private var isUpdatingFromPreset = false
 
     // MARK: - Initialization
     private init() {
@@ -99,6 +104,9 @@ class SettingsManager: ObservableObject {
 
     func applyPreset(_ preset: WhisperPreset) {
         guard preset != .custom else { return }
+
+        isUpdatingFromPreset = true
+        defer { isUpdatingFromPreset = false }
 
         var newSettings = preset.settings
         // Preserve basic settings that shouldn't change with presets
