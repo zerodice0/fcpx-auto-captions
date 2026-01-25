@@ -13,6 +13,7 @@ struct FrameRatePicker: View {
                 }
             }
             .pickerStyle(MenuPickerStyle())
+            .frame(maxWidth: 300, alignment: .leading)
 
             if selectedFrameRate == .custom {
                 HStack(spacing: 8) {

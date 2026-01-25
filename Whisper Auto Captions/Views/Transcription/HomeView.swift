@@ -109,7 +109,8 @@ struct HomeView: View {
                 .gridCellColumns(2)
                 .gridCellAnchor(.center)
             }
-            
+            .padding()
+
             if viewModel.isDownloading {
                 ProgressView(value: viewModel.downloadProgress)
                     .padding()
