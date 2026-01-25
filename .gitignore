@@ -27,3 +27,11 @@ Package.resolved
 
 # Conductor workspace data
 .context/
+
+# Whisper model files
+*.bin
+*.ggml
+models/
+
+# FFmpeg binary (downloaded during build)
+Whisper Auto Captions/ffmpeg

@@ -18,8 +18,12 @@ Youtube: [https://youtu.be/2_QOACyuZIk](https://youtu.be/n1qMG87aJcw)
 https://whisperautocaptions.com/
 
 ## 다운로드
-* [Apple Chip (M1/M2/M3)](https://drive.google.com/file/d/1RGnyiPTWGtHn8hSHElsB72gZtx9nSAXQ/view?usp=sharing)
-* [Intel Chip](https://drive.google.com/file/d/1AgU3_XNimv1Z_pE5VeFYyhG9O_eFaina/view?usp=sharing)
+
+**[최신 버전 다운로드](https://github.com/zerodice0/fcpx-auto-captions/releases/latest)**
+
+앱은 이제 Apple Silicon (M1/M2/M3/M4)과 Intel Mac 모두에서 작동하는 **유니버설 바이너리**로 제공됩니다.
+
+* [모든 릴리스 보기](https://github.com/zerodice0/fcpx-auto-captions/releases)
 * [중국 다운로드](https://vu3mopq3x8.feishu.cn/docx/Go9IdrSkpochcoxpgHfcl7nhn2d)
 
 ## 주요 기능
@@ -35,6 +39,7 @@ https://whisperautocaptions.com/
 * **자동 프레임레이트 감지** - 동영상 파일에서 프레임레이트 자동 감지
 * **오디오 세그먼트 설정** - 세그먼트 지속시간 조절 가능 (1-30분)
 * **설정 유지** - 앱 재시작 후에도 모든 설정 유지
+* **자동 업데이트** - Sparkle를 통한 자동 업데이트 확인 기능
 
 ## AI 어시스턴트
 

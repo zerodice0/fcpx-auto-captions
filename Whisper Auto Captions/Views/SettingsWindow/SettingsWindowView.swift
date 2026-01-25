@@ -11,6 +11,7 @@ import Inject
 #endif
 
 enum SettingsSection: String, CaseIterable, Identifiable {
+    case general = "General"
     case quality = "Quality"
     case performance = "Performance"
     case output = "Output"
@@ -22,6 +23,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .general: return "gear"
         case .quality: return "star.fill"
         case .performance: return "bolt.fill"
         case .output: return "doc.text.fill"
@@ -33,6 +35,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
+        case .general:
+            return String(localized: "General", comment: "General settings section")
         case .quality:
             return String(localized: "Quality", comment: "Quality settings section")
         case .performance:
@@ -55,7 +59,7 @@ struct SettingsWindowView: View {
     #endif
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var settingsManager = SettingsManager.shared
-    @State private var selectedSection: SettingsSection = .quality
+    @State private var selectedSection: SettingsSection = .general
 
     var body: some View {
         VStack(spacing: 0) {
@@ -156,6 +160,8 @@ struct SettingsWindowView: View {
     @ViewBuilder
     private var settingsContent: some View {
         switch selectedSection {
+        case .general:
+            GeneralSettingsView()
         case .quality:
             QualitySettingsView(settings: $settingsManager.settings)
         case .performance:
