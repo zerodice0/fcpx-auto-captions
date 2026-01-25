@@ -24,7 +24,6 @@ https://whisperautocaptions.com/
 앱은 이제 Apple Silicon (M1/M2/M3/M4)과 Intel Mac 모두에서 작동하는 **유니버설 바이너리**로 제공됩니다.
 
 * [모든 릴리스 보기](https://github.com/zerodice0/fcpx-auto-captions/releases)
-* [중국 다운로드](https://vu3mopq3x8.feishu.cn/docx/Go9IdrSkpochcoxpgHfcl7nhn2d)
 
 ## 주요 기능
 * 90개 이상의 언어에서 정확한 음성 인식

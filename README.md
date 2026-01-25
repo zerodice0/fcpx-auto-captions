@@ -24,7 +24,6 @@ https://whisperautocaptions.com/
 The app now ships as a **Universal binary** that works on both Apple Silicon (M1/M2/M3/M4) and Intel Macs.
 
 * [All Releases](https://github.com/zerodice0/fcpx-auto-captions/releases)
-* [Download from China](https://vu3mopq3x8.feishu.cn/docx/Go9IdrSkpochcoxpgHfcl7nhn2d)
 
 ## Features
 * Accurate transcription in over 90 languages
