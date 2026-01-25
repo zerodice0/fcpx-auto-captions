@@ -1,14 +1,7 @@
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 // MARK: - Home View
 struct HomeView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject private var settingsManager = SettingsManager.shared
     @ObservedObject private var customModelManager = CustomModelManager.shared
@@ -68,7 +61,7 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(alignment: .leading)
+                    .frame(maxWidth: 300, alignment: .leading)
                 }
 
                 // Language Selection
@@ -80,7 +73,7 @@ struct HomeView: View {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(alignment: .leading)
+                    .frame(maxWidth: 300, alignment: .leading)
                 }
 
                 // Settings Summary
@@ -107,11 +100,9 @@ struct HomeView: View {
 
                 // Action Buttons
                 GridRow {
-                    Button(action: {
-                        viewModel.validateAndStartTranscription()
-                    }, label: {
+                    Button(action: viewModel.validateAndStartTranscription) {
                         Text(String(localized: "Create", comment: "Create button"))
-                    })
+                    }
                     .buttonStyle(BorderedProminentButtonStyle())
                     .disabled(viewModel.fileURL == nil || !viewModel.isFpsValid)
                 }
@@ -139,15 +130,12 @@ struct HomeView: View {
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsWindowView()
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
     
     // MARK: - Actions
     private func selectFile() {
         FileUtility.selectFile(allowedTypes: [.audio, .movie], allowDirectories: true) { url in
-            if let url = url {
+            if let url {
                 viewModel.selectFile(url: url)
             }
         }
