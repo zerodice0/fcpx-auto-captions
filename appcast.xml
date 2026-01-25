@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>Whisper Auto Captions</title>
     <link>https://github.com/zerodice0/fcpx-auto-captions</link>
-    <description>Whisper Auto Captions updates</description>
+    <description>Most recent changes with links to updates.</description>
+    <language>en</language>
+    <item>
+      <title>Version 1.0.1</title>
+      <pubDate>Sun, 25 Jan 2026 07:56:57 +0000</pubDate>
+      <sparkle:version>1.0.1</sparkle:version>
+      <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.0.1/Whisper Auto Captions-1.0.1-Universal.dmg"
+        length="64238302"
+        type="application/octet-stream"
+        sparkle:edSignature="sparkle:edSignature="9yDaSyvE7TC+akhN9eCGIk6znK4rT5PzBWjMPe9sKHq7vJGyBKPCUxL2RnLCxbrdtTJCXrBIb+P/p1RflZyDDQ==" length="64238302""
+      />
+    </item>
   </channel>
 </rss>
