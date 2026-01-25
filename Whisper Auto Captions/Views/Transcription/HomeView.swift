@@ -8,9 +8,10 @@ struct HomeView: View {
     #if DEBUG
     @ObserveInjection var inject
     #endif
-    
+
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject private var settingsManager = SettingsManager.shared
+    @ObservedObject private var customModelManager = CustomModelManager.shared
 
     var body: some View {
         VStack {
@@ -45,8 +46,25 @@ struct HomeView: View {
                 GridRow {
                     Text(String(localized: "Model:", comment: "Model label"))
                     Picker(selection: $viewModel.selectedModel, label: EmptyView()) {
-                        ForEach(viewModel.models, id: \.self) {
-                            Text($0)
+                        // Built-in models
+                        ForEach(viewModel.models, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+
+                        // Custom models (if any)
+                        if !customModelManager.customModels.isEmpty {
+                            Divider()
+
+                            ForEach(customModelManager.customModels) { customModel in
+                                HStack {
+                                    Text(customModel.name)
+                                    if !customModel.isDownloaded {
+                                        Image(systemName: "arrow.down.circle")
+                                            .font(.caption)
+                                    }
+                                }
+                                .tag(customModel.name)
+                            }
                         }
                     }
                     .pickerStyle(MenuPickerStyle())

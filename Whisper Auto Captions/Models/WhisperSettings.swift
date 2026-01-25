@@ -12,6 +12,7 @@ struct WhisperSettings: Codable, Equatable {
     // MARK: - Basic Settings
     var model: String = "Medium"
     var language: String = "Auto"
+    var customModels: [CustomModel] = []
     var fps: String = ""
     var selectedFrameRate: String = "30"  // FrameRate.rawValue for persistence
     var customFps: String = "30"

@@ -84,6 +84,31 @@ class HomeViewModel: ObservableObject {
     let languagesMapping = LanguageData.languageToCode
     let models = ModelData.models
     let modelsMapping = ModelData.modelToFileName
+
+    // MARK: - Custom Models
+    private let customModelManager = CustomModelManager.shared
+
+    /// All available custom models
+    var customModels: [CustomModel] {
+        customModelManager.customModels
+    }
+
+    /// Check if the selected model is a custom model
+    var isCustomModelSelected: Bool {
+        customModelManager.isCustomModel(selectedModel)
+    }
+
+    /// Get the path for the currently selected model
+    func getSelectedModelPath() -> URL? {
+        // Check if it's a custom model first
+        if let customModel = customModelManager.findModel(byName: selectedModel) {
+            return try? customModelManager.getCustomModelPath(for: customModel)
+        }
+
+        // Fall back to built-in model
+        guard let modelFileName = modelsMapping[selectedModel] else { return nil }
+        return try? AppDirectoryUtility.getModelPath(for: modelFileName)
+    }
     
     // MARK: - Computed Properties
     var currentFps: Float {
@@ -244,12 +269,12 @@ class HomeViewModel: ObservableObject {
                 completion("")
                 return
             }
-            
-            guard let modelPath = try? AppDirectoryUtility.getModelPath(for: selectedModel) else {
+
+            guard let modelPath = self.getSelectedModelPath() else {
                 completion("")
                 return
             }
-            
+
             guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil),
                   let langCode = languagesMapping[selectedLanguage] else {
                 completion("")
@@ -353,10 +378,17 @@ class HomeViewModel: ObservableObject {
     // MARK: - Model Validation
     func validateAndStartTranscription() {
         let fm = FileManager.default
-        
+
         // Ensure app directory exists
         try? AppDirectoryUtility.ensureDirectoryExists()
-        
+
+        // Handle custom models
+        if let customModel = customModelManager.findModel(byName: selectedModel) {
+            validateAndStartCustomModel(customModel)
+            return
+        }
+
+        // Handle built-in models
         guard let modelFileName = modelsMapping[selectedModel],
               let modelPath = try? AppDirectoryUtility.getModelPath(for: modelFileName) else { return }
 
@@ -374,6 +406,51 @@ class HomeViewModel: ObservableObject {
         } else {
             downloadModel(model: modelFileName) { [weak self] success in
                 if success { self?.startTranscription() }
+            }
+        }
+    }
+
+    /// Validate and start transcription for a custom model
+    private func validateAndStartCustomModel(_ model: CustomModel) {
+        let fm = FileManager.default
+
+        guard let modelPath = try? customModelManager.getCustomModelPath(for: model) else {
+            return
+        }
+
+        if fm.fileExists(atPath: modelPath.path) {
+            let attrs = try? fm.attributesOfItem(atPath: modelPath.path)
+            let size = attrs?[.size] as? Int64 ?? 0
+            if size >= 50 * 1024 * 1024 {
+                startTranscription()
+            } else {
+                // File exists but is too small - need to re-download
+                try? fm.removeItem(at: modelPath)
+                downloadCustomModel(model)
+            }
+        } else {
+            // Model not downloaded yet
+            downloadCustomModel(model)
+        }
+    }
+
+    /// Download a custom model and start transcription when complete
+    private func downloadCustomModel(_ model: CustomModel) {
+        guard case .url = model.source else {
+            // Local models should already be imported - can't download
+            return
+        }
+
+        isDownloading = true
+        showAlert = true
+
+        customModelManager.downloadModel(model) { [weak self] success in
+            DispatchQueue.main.async {
+                self?.isDownloading = false
+                self?.showAlert = false
+                if success {
+                    self?.startTranscription()
+                }
             }
         }
     }
