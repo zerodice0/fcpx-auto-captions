@@ -7,15 +7,15 @@
     <language>en</language>
     <item>
       <title>Version 1.0.1</title>
-      <pubDate>Sun, 25 Jan 2026 07:56:57 +0000</pubDate>
+      <pubDate>Sun, 25 Jan 2026 08:18:20 +0000</pubDate>
       <sparkle:version>1.0.1</sparkle:version>
       <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <enclosure
         url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.0.1/Whisper Auto Captions-1.0.1-Universal.dmg"
-        length="64238302"
+        length="64238655"
         type="application/octet-stream"
-        sparkle:edSignature="sparkle:edSignature="9yDaSyvE7TC+akhN9eCGIk6znK4rT5PzBWjMPe9sKHq7vJGyBKPCUxL2RnLCxbrdtTJCXrBIb+P/p1RflZyDDQ==" length="64238302""
+        sparkle:edSignature="sparkle:edSignature="qBKb4LfxX4vm0An0V2LSsHAsebo+955k+rI7+1W0PQJsBWod6jhFl/iV79zhXPiYLthHa+rRlvouhe7LpWIoBg==" length="64238655""
       />
     </item>
   </channel>
