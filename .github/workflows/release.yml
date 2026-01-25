@@ -294,9 +294,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Copy appcast.xml
-          cp appcast.xml ./appcast.xml
-
+          # appcast.xml is already downloaded to current directory by download-artifact
           # Commit and push
           git add appcast.xml
           git commit -m "Update appcast.xml for v$VERSION" || echo "No changes to commit"
