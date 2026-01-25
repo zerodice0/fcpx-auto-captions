@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Whisper Auto Captions</title>
+    <link>https://github.com/zerodice0/fcpx-auto-captions</link>
+    <description>Whisper Auto Captions updates</description>
+  </channel>
+</rss>

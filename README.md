@@ -1,0 +1,1 @@
+# Whisper Auto Captions - Updates
