@@ -191,10 +191,11 @@ jobs:
           PUB_DATE=$(date -R)
 
           # Get signature if available
+          # sign_update outputs full attribute string "sparkle:edSignature=... length=..."
           SIGNATURE="${SPARKLE_SIGNATURE:-}"
           SIGNATURE_ATTR=""
           if [ -n "$SIGNATURE" ]; then
-            SIGNATURE_ATTR="sparkle:edSignature=\"$SIGNATURE\""
+            SIGNATURE_ATTR="$SIGNATURE"
           fi
 
           cat > "./build/appcast.xml" << EOF
