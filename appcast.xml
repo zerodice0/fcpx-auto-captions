@@ -6,16 +6,16 @@
     <description>Most recent changes with links to updates.</description>
     <language>en</language>
     <item>
-      <title>Version 1.1.0</title>
-      <pubDate>Sun, 01 Feb 2026 10:08:58 +0000</pubDate>
-      <sparkle:version>1.1.0</sparkle:version>
-      <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+      <title>Version 1.1.1</title>
+      <pubDate>Sun, 01 Feb 2026 11:39:42 +0000</pubDate>
+      <sparkle:version>1.1.1</sparkle:version>
+      <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <enclosure
-        url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.1.0/Whisper Auto Captions-1.1.0-Universal.dmg"
-        length="64235677"
+        url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.1.1/Whisper Auto Captions-1.1.1-Universal.dmg"
+        length="64235643"
         type="application/octet-stream"
-        sparkle:edSignature="sparkle:edSignature="vmM1k4uOtCHdxOKNbpEJTIxoh5duZ4jSTSb3TedflQEWqMoNoEfNHR3bv8OvYBjY3Zj89hoHnYTLtAV08E0CCA==" length="64235677""
+        sparkle:edSignature="8CCiJTwpfqxe7msQBNzygmK3CnXjdBDv0DwKFWsseyALG3QLILWE4yIlfj66hJXXqKlvwUGeyiGRm0DXznN6Cg==" length="64235643"
       />
     </item>
   </channel>
