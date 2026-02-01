@@ -254,8 +254,7 @@ class HomeViewModel: ObservableObject {
                 self.outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
                     srtPath: outputSRTFilePath,
                     fps: self.currentFps,
-                    projectName: self.projectName,
-                    language: self.selectedLanguage
+                    projectName: self.projectName
                 )
                 self.outputSRTFilePath = outputSRTFilePath
             }

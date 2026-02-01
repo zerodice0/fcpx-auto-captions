@@ -39,21 +39,8 @@ struct FCPXMLService {
         return frame
     }
 
-    // MARK: - Text Formatting
-    static func formatText(fullText: String) -> String {
-        let words = fullText.split(separator: " ")
-        var lines = [String]()
-        for i in stride(from: 0, to: words.count, by: 16) {
-            let endIndex = min(i + 16, words.count)
-            let line = words[i..<endIndex].joined(separator: " ")
-            lines.append(line)
-        }
-        let formattedText = lines.joined(separator: "\n")
-        return formattedText
-    }
-
     // MARK: - SRT to FCPXML Conversion
-    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, language: String, width: Int = 1920, height: Int = 1080, titleStyle: TitleStyleSettings = .default) -> String {
+    static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, width: Int = 1920, height: Int = 1080, titleStyle: TitleStyleSettings = .default) -> String {
         do {
             let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
 
@@ -179,16 +166,14 @@ struct FCPXMLService {
 
                 let hundredFoldOffsetFrame = String(100 * offsetFrame)
                 let hundredFoldDurationFrame = String(100 * durationFrame)
-                var subtitleContent = subtitleItem[2]
-                if language == "English" {
-                    if subtitleContent.split(separator: " ").count > 16 {
-                        subtitleContent = formatText(fullText: subtitleContent)
-                    }
-                }
+                // 인덱스 2 이상의 모든 줄을 결합하고 앞뒤 공백 제거
+                let subtitleContent = subtitleItem.dropFirst(2)
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .joined(separator: "\n")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
 
-                // Create title element based on language and style settings
+                // Create title element based on style settings
                 let titleElement = createTitleElement(
-                    language: language,
                     index: i,
                     subtitleContent: subtitleContent,
                     hundredFoldOffsetFrame: hundredFoldOffsetFrame,
@@ -225,7 +210,6 @@ struct FCPXMLService {
 
     /// Create a title element for a subtitle
     private static func createTitleElement(
-        language: String,
         index: Int,
         subtitleContent: String,
         hundredFoldOffsetFrame: String,

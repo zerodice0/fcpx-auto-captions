@@ -93,18 +93,6 @@ struct SRTConverterInputView: View {
                     }
                 }
 
-                // Language Selection
-                GridRow {
-                    Text(String(localized: "Language:", comment: "Language label"))
-                    Picker(selection: $viewModel.selectedLanguage, label: EmptyView()) {
-                        ForEach(viewModel.languages, id: \.self) {
-                            Text($0)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(maxWidth: 300, alignment: .leading)
-                }
-
                 // Title Style Settings
                 GridRow {
                     Text(String(localized: "Title Style:", comment: "Title style label"))

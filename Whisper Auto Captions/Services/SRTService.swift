@@ -46,7 +46,11 @@ class SRTService {
                     let newEnd = adjustSrtTime(srtTime: end, factor: i)
 
                     let newTimeRange = newStart + " --> " + newEnd
-                    let subtitleContent = subtitleItem[2]
+                    // 인덱스 2 이상의 모든 줄을 결합하고 앞뒤 공백 제거
+                    let subtitleContent = subtitleItem.dropFirst(2)
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+                        .joined(separator: "\n")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
 
                     mergedContents += "\(index)\n"
                     mergedContents += "\(newTimeRange)\n"

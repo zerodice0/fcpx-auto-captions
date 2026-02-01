@@ -10,11 +10,6 @@ class SRTConverterViewModel: ObservableObject {
     @Published var srtFileURL: URL?
     @Published var fileName: String = ""
     @Published var projectName: String = ""
-    @Published var selectedLanguage = "English" {
-        didSet {
-            updateFontForLanguage()
-        }
-    }
     @Published var outputFCPXMLFilePath = ""
     @Published var conversionComplete = false
 
@@ -75,10 +70,6 @@ class SRTConverterViewModel: ObservableObject {
             }
         }
     }
-    
-    // MARK: - Languages
-    // Use centralized language data (excludes "Auto" for SRT converter)
-    let languages = LanguageData.languages.filter { $0 != "Auto" }
     
     // MARK: - Computed Properties
     var currentWidth: Int {
@@ -151,7 +142,6 @@ class SRTConverterViewModel: ObservableObject {
             srtPath: srtPath,
             fps: currentFps,
             projectName: projectName,
-            language: selectedLanguage,
             width: currentWidth,
             height: currentHeight,
             titleStyle: titleStyle
@@ -169,7 +159,6 @@ class SRTConverterViewModel: ObservableObject {
         srtFileURL = nil
         fileName = ""
         projectName = ""
-        selectedLanguage = "English"
         // Don't reset titleStyle - keep user's preferred style settings
         showTitleStyleSettings = false
     }
@@ -185,15 +174,6 @@ class SRTConverterViewModel: ObservableObject {
     /// Calculate position values for a preset (for local state in View)
     func calculatePositionForPreset(_ preset: PositionPreset) -> (x: CGFloat, y: CGFloat) {
         return preset.position(for: currentHeight)
-    }
-
-    /// Update font settings based on selected language
-    private func updateFontForLanguage() {
-        if selectedLanguage.contains("Chinese") {
-            titleStyle.fontName = "PingFang SC"
-            titleStyle.fontSize = 50
-            titleStyle.fontWeight = .semibold
-        }
     }
 
 }
