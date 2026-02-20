@@ -147,7 +147,7 @@ class SRTConverterViewModel: ObservableObject {
             titleStyle: titleStyle
         )
 
-        if outputFCPXMLFilePath != "Error" {
+        if FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) {
             conversionComplete = true
         }
     }

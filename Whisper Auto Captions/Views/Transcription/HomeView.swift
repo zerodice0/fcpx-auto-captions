@@ -5,6 +5,8 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject private var settingsManager = SettingsManager.shared
     @ObservedObject private var customModelManager = CustomModelManager.shared
+    @State private var showInvalidFileAlert = false
+    @State private var invalidFileErrorMessage = ""
 
     var body: some View {
         VStack {
@@ -131,13 +133,28 @@ struct HomeView: View {
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsWindowView()
         }
+        .alert("Invalid File", isPresented: $showInvalidFileAlert) {
+            Button("OK", role: .cancel) {
+                showInvalidFileAlert = false
+            }
+        } message: {
+            Text(invalidFileErrorMessage)
+        }
     }
     
     // MARK: - Actions
     private func selectFile() {
-        FileUtility.selectFile(allowedTypes: [.audio, .movie], allowDirectories: true) { url in
-            if let url {
+        FileUtility.selectFile(allowedTypes: [.audio, .movie], allowDirectories: false) { url in
+            guard let url else { return }
+
+            if FileUtility.isValidMediaFile(url: url, allowedTypes: [.audio, .movie]) {
                 viewModel.selectFile(url: url)
+            } else {
+                invalidFileErrorMessage = FileUtility.mediaFileValidationMessage(
+                    for: url,
+                    allowedTypes: [.audio, .movie]
+                )
+                showInvalidFileAlert = true
             }
         }
     }

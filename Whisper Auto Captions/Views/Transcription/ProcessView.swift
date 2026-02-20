@@ -24,7 +24,7 @@ struct ProcessView: View {
                         Image(systemName: "arrow.counterclockwise")
                         Text("Reset")
                     }
-                    .disabled(!isProcessingComplete)
+                    .disabled(!viewModel.isProcessingFinished)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -76,7 +76,7 @@ struct ProcessView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .tint(.purple)
-                    .disabled(!isProcessingComplete)
+                    .disabled(!viewModel.isProcessingComplete)
 
                     Button(action: {
                         FileUtility.saveFileWithDialog(filePath: viewModel.outputFCPXMLFilePath)
@@ -87,7 +87,7 @@ struct ProcessView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .tint(.blue)
-                    .disabled(!isProcessingComplete)
+                    .disabled(!viewModel.isProcessingComplete)
 
                     Button(action: {
                         FileUtility.saveFileWithDialog(filePath: viewModel.outputSRTFilePath)
@@ -99,7 +99,7 @@ struct ProcessView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .tint(.green)
-                    .disabled(!isProcessingComplete || viewModel.currentBatch == viewModel.totalBatch - 1)
+                    .disabled(!viewModel.isProcessingComplete)
                 }
                 .padding()
                 .padding(.bottom, -20)
@@ -113,7 +113,7 @@ struct ProcessView: View {
                         fcpxmlPath: viewModel.outputFCPXMLFilePath,
                         label: "Click here to check auto captions in Final Cut Pro X"
                     )
-                    .disabled(!isProcessingComplete)
+                    .disabled(!viewModel.isProcessingComplete)
                 }
                 .padding()
                 .padding(.bottom, -20)
@@ -160,10 +160,6 @@ struct ProcessView: View {
     }
     
     // MARK: - Computed Properties
-    private var isProcessingComplete: Bool {
-        viewModel.currentBatch == viewModel.totalBatch && viewModel.progressPercentage >= 100
-    }
-    
     private var batchDisplayText: String {
         let current = viewModel.currentBatch == -100000 ? "···" : String(viewModel.currentBatch)
         let total = viewModel.totalBatch == 100000 ? "···" : String(viewModel.totalBatch)

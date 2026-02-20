@@ -28,6 +28,13 @@ class HomeViewModel: ObservableObject {
     @Published var showAlert = false
     
     // Processing state
+    enum TranscriptionState: Equatable {
+        case idle
+        case running
+        case succeeded
+        case failed(String)
+    }
+
     @Published var startCreatingAutoCaptions = false
     @Published var progress = 0.0
     @Published var progressPercentage = 0
@@ -38,6 +45,7 @@ class HomeViewModel: ObservableObject {
     @Published var outputCaptions = ""
     @Published var outputSRTFilePath = ""
     @Published var outputFCPXMLFilePath = ""
+    @Published var processingState: TranscriptionState = .idle
     
     // MARK: - Private Properties
     private var downloadDelegate: DownloadDelegate?
@@ -121,6 +129,20 @@ class HomeViewModel: ObservableObject {
     var isFpsValid: Bool {
         return FrameRate.isValidFrameRate(currentFps)
     }
+
+    var isProcessingComplete: Bool {
+        if case .succeeded = processingState { return true }
+        return false
+    }
+
+    var isProcessingRunning: Bool {
+        if case .running = processingState { return true }
+        return false
+    }
+
+    var isProcessingFinished: Bool {
+        return !isProcessingRunning
+    }
     
     // MARK: - File Selection
     func selectFile(url: URL) {
@@ -198,6 +220,8 @@ class HomeViewModel: ObservableObject {
         guard let fileURL = fileURL else { return }
         
         self.startCreatingAutoCaptions = true
+        self.processingState = .running
+        self.outputCaptions = ""
         let filePathString = fileURL.path
         let tempFolder = NSTemporaryDirectory()
 
@@ -209,15 +233,23 @@ class HomeViewModel: ObservableObject {
         )
 
         let segmentDuration = Double(SettingsManager.shared.settings.audioSegmentDuration)
-        let splitedWavFilesPaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: segmentDuration)
+        let validSegmentDuration = segmentDuration > 0 ? segmentDuration : 600.0
+        let splitedWavFilesPaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
         self.totalBatch = splitedWavFilesPaths.count
         self.status = "Generating AI subtitles"
+        self.currentBatch = 0
+        self.progress = 0.0
+        self.progressPercentage = 0
+        self.remainingTime = "00:00"
+        self.outputSRTFilePath = ""
+        self.outputFCPXMLFilePath = ""
 
         var srtFiles = [String]()
 
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             let group = DispatchGroup()
+            var failedBatch: Int? = nil
 
             for (b, splitedWavFilePath) in splitedWavFilesPaths.enumerated() {
                 DispatchQueue.main.async { self.currentBatch = b + 1 }
@@ -235,28 +267,55 @@ class HomeViewModel: ObservableObject {
                         self.progress = 0.0
                         self.progressPercentage = 0
                     }
+                } else {
+                    failedBatch = b + 1
                 }
             }
 
             DispatchQueue.main.async {
                 self.progress = 1.0
                 self.progressPercentage = 100
+                self.remainingTime = "00:00"
+
+                if let failedBatch {
+                    self.status = "Error: Failed to generate subtitles for batch \(failedBatch)"
+                    self.processingState = .failed(self.status)
+                    return
+                }
 
                 if srtFiles.isEmpty {
                     self.status = "Error: No subtitles generated"
-                    self.startCreatingAutoCaptions = false
+                    self.processingState = .failed(self.status)
                     return
                 }
 
                 // Use SRTService for merging
-                let outputSRTFilePath = SRTService.shared.mergeSRT(srtFiles: srtFiles)
-                self.status = "Done"
-                self.outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
+                let outputSRTFilePath = SRTService.shared.mergeSRT(
+                    srtFiles: srtFiles,
+                    segmentDurationSeconds: validSegmentDuration
+                )
+
+                guard self.isValidSrtFile(outputSRTFilePath) else {
+                    self.status = "Error: Merged SRT is invalid"
+                    self.processingState = .failed(self.status)
+                    return
+                }
+
+                let outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
                     srtPath: outputSRTFilePath,
                     fps: self.currentFps,
                     projectName: self.projectName
                 )
+                guard FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) else {
+                    self.status = "Error: Failed to generate FCPXML"
+                    self.processingState = .failed(self.status)
+                    return
+                }
+
+                self.status = "Done"
                 self.outputSRTFilePath = outputSRTFilePath
+                self.outputFCPXMLFilePath = outputFCPXMLFilePath
+                self.processingState = .succeeded
             }
         }
     }
@@ -288,32 +347,56 @@ class HomeViewModel: ObservableObject {
             let outputPipe = Pipe()
             task.standardError = errorPipe
             task.standardOutput = outputPipe
-            task.launch()
-            
+
             let startTime = Date()
             let errorHandle = errorPipe.fileHandleForReading
             let outputHandle = outputPipe.fileHandleForReading
-            
-            while task.isRunning || errorHandle.availableData.count > 0 {
-                let errorData = errorHandle.availableData
-                if !errorData.isEmpty, let error = String(data: errorData, encoding: .utf8) {
+
+            errorHandle.readabilityHandler = { [weak self] handle in
+                guard let self = self else { return }
+                let errorData = handle.availableData
+                guard !errorData.isEmpty else { return }
+                if let error = String(data: errorData, encoding: .utf8) {
                     self.parseProgress(from: error, startTime: startTime)
                 }
-                let outputData = outputHandle.availableData
-                if !outputData.isEmpty, let captions = String(data: outputData, encoding: .utf8) {
+            }
+
+            outputHandle.readabilityHandler = { [weak self] handle in
+                guard let self = self else { return }
+                let outputData = handle.availableData
+                guard !outputData.isEmpty else { return }
+                if let captions = String(data: outputData, encoding: .utf8) {
                     DispatchQueue.main.async { self.outputCaptions += captions }
                 }
             }
-            
-            task.waitUntilExit()
-            DispatchQueue.main.async {
-                self.progress = 1.0
-                self.progressPercentage = 100
-                self.remainingTime = "00:00"
+
+            task.terminationHandler = { [weak self] terminatedTask in
+                guard let self = self else {
+                    completion("")
+                    return
+                }
+
+                errorHandle.readabilityHandler = nil
+                outputHandle.readabilityHandler = nil
+
+                _ = outputHandle.readDataToEndOfFile()
+                _ = errorHandle.readDataToEndOfFile()
+
+                DispatchQueue.main.async {
+                    self.progress = 1.0
+                    self.progressPercentage = 100
+                    self.remainingTime = "00:00"
+                }
+
+                let srtFilePath = outputWavFilePath + ".srt"
+                if terminatedTask.terminationStatus == 0 && self.isValidSrtFile(srtFilePath) {
+                    completion(srtFilePath)
+                } else {
+                    completion("")
+                }
             }
 
-            let srtFilePath = outputWavFilePath + ".srt"
-            self.validateSrtFile(srtFilePath, completion: completion)
+            task.launch()
         }
     }
     
@@ -321,7 +404,7 @@ class HomeViewModel: ObservableObject {
         var args = ["-m", modelPath, "-l", langCode, "-pp", "-osrt", "-f", wavPath]
         if langCode == "zh" {
             let prompt = selectedLanguage == "Chinese Simplified" ? "以下是普通话的句子" : "以下是普通話的句子"
-            args += ["--prompt", "\"\(prompt)\""]
+            args += ["--prompt", prompt]
         }
         return args
     }
@@ -346,7 +429,7 @@ class HomeViewModel: ObservableObject {
         }
     }
     
-    private func validateSrtFile(_ path: String, completion: @escaping (String) -> Void) {
+    private func isValidSrtFile(_ path: String) -> Bool {
         let fm = FileManager.default
         guard fm.fileExists(atPath: path),
               let attrs = try? fm.attributesOfItem(atPath: path),
@@ -354,10 +437,9 @@ class HomeViewModel: ObservableObject {
               let content = try? String(contentsOfFile: path, encoding: .utf8),
               !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               content.contains("-->") else {
-            completion("")
-            return
+            return false
         }
-        completion(path)
+        return true
     }
 
     // MARK: - Reset
@@ -367,6 +449,7 @@ class HomeViewModel: ObservableObject {
         progressPercentage = 0
         remainingTime = "00:00"
         startCreatingAutoCaptions = false
+        processingState = .idle
         outputSRTFilePath = ""
         outputFCPXMLFilePath = ""
         totalBatch = 100000

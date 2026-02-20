@@ -15,7 +15,7 @@ class SRTService {
 
     // MARK: - Merge SRT Files
     /// Merge multiple SRT files into one, adjusting timestamps
-    func mergeSRT(srtFiles: [String]) -> String {
+    func mergeSRT(srtFiles: [String], segmentDurationSeconds: TimeInterval = 600.0) -> String {
         guard !srtFiles.isEmpty else { return "" }
 
         let mergedSrtPath = srtFiles[0] + "_merged.srt"
@@ -42,8 +42,9 @@ class SRTService {
                     let start = timeRange[0]
                     let end = timeRange[1]
 
-                    let newStart = adjustSrtTime(srtTime: start, factor: i)
-                    let newEnd = adjustSrtTime(srtTime: end, factor: i)
+                    let offsetSeconds = TimeInterval(i) * segmentDurationSeconds
+                    let newStart = adjustSrtTime(srtTime: start, offsetSeconds: offsetSeconds)
+                    let newEnd = adjustSrtTime(srtTime: end, offsetSeconds: offsetSeconds)
 
                     let newTimeRange = newStart + " --> " + newEnd
                     // 인덱스 2 이상의 모든 줄을 결합하고 앞뒤 공백 제거
@@ -72,8 +73,8 @@ class SRTService {
     }
 
     // MARK: - Adjust SRT Time
-    /// Adjust SRT timestamp by adding 10 minutes * factor
-    func adjustSrtTime(srtTime: String, factor: Int) -> String {
+    /// Adjust SRT timestamp by adding a fixed offset in seconds
+    func adjustSrtTime(srtTime: String, offsetSeconds: TimeInterval) -> String {
         let timeComponents = srtTime.components(separatedBy: ":")
         guard timeComponents.count >= 3 else { return srtTime }
 
@@ -82,15 +83,17 @@ class SRTService {
         let secondsAndMilliseconds = timeComponents[2].components(separatedBy: ",")
         let seconds = Int(secondsAndMilliseconds[0]) ?? 0
 
-        let totalMinutes = (hours * 60) + minutes
-        let newTotalMinutes = totalMinutes + (factor * 10)
-        let newHours = newTotalMinutes / 60
-        let newMinutes = newTotalMinutes % 60
+        let milliseconds = Int(secondsAndMilliseconds.count > 1 ? secondsAndMilliseconds[1] : "000") ?? 0
+        let totalMilliseconds = ((hours * 3600) + (minutes * 60) + seconds) * 1000 + milliseconds
+        let adjustedMilliseconds = totalMilliseconds + Int(round(offsetSeconds * 1000))
+        let newTotalSeconds = max(0, adjustedMilliseconds / 1000)
+        let newMilliseconds = adjustedMilliseconds % 1000
 
-        let milliseconds = secondsAndMilliseconds.count > 1 ? secondsAndMilliseconds[1] : "000"
-        let newTime = String(format: "%02d:%02d:%02d,%@", newHours, newMinutes, seconds, milliseconds)
+        let newHours = newTotalSeconds / 3600
+        let newMinutes = (newTotalSeconds % 3600) / 60
+        let newSeconds = newTotalSeconds % 60
 
-        return newTime
+        return String(format: "%02d:%02d:%02d,%03d", newHours, newMinutes, newSeconds, newMilliseconds)
     }
 
 }

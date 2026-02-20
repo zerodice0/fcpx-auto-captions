@@ -206,6 +206,30 @@ struct FCPXMLService {
         }
     }
 
+    static func isValidFCPXMLFile(_ path: String) -> Bool {
+        let fileManager = FileManager.default
+        guard !path.isEmpty,
+              fileManager.fileExists(atPath: path),
+              let attrs = try? fileManager.attributesOfItem(atPath: path),
+              let size = attrs[.size] as? Int64,
+              size > 0 else {
+            return false
+        }
+
+        let fcpxmlURL = URL(fileURLWithPath: path)
+        guard let data = try? Data(contentsOf: fcpxmlURL),
+              !data.isEmpty else {
+            return false
+        }
+
+        do {
+            let xml = try XMLDocument(data: data, options: .documentTidyXML)
+            return xml.rootElement()?.name == "fcpxml"
+        } catch {
+            return false
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Create a title element for a subtitle
@@ -297,12 +321,22 @@ struct FCPXMLService {
     /// Opens an FCPXML file in Final Cut Pro using AppleScript
     /// - Parameter fcpxmlPath: The file path to the FCPXML file
     static func openInFinalCutPro(fcpxmlPath: String) {
+        let fileManager = FileManager.default
+        let fcpxmlURL = URL(fileURLWithPath: fcpxmlPath)
+        guard !fcpxmlPath.isEmpty,
+              fileManager.fileExists(atPath: fcpxmlURL.path),
+              (try? fcpxmlURL.resourceValues(forKeys: [.isReadableKey]).isReadable) == true else {
+            return
+        }
+
+        let safePath = escapeAppleScriptPath(fcpxmlPath)
+
         let command =
         """
         tell application "Final Cut Pro"
             launch
             activate
-            open POSIX file "\(fcpxmlPath)"
+            open POSIX file "\(safePath)"
         end tell
         """
         DispatchQueue.global(qos: .background).async {
@@ -311,6 +345,14 @@ struct FCPXMLService {
                 _ = scriptObject.executeAndReturnError(&error)
             }
         }
+    }
+
+    private static func escapeAppleScriptPath(_ path: String) -> String {
+        return path
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\n", with: "\\n")
     }
 }
 

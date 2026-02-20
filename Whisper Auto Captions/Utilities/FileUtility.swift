@@ -48,6 +48,35 @@ struct FileUtility {
             completion(nil)
         }
     }
+
+    static func isValidMediaFile(url: URL, allowedTypes: [UTType]) -> Bool {
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory), !isDirectory.boolValue else {
+            return false
+        }
+
+        guard let resourceValues = try? url.resourceValues(forKeys: [.contentTypeKey]),
+              let contentType = resourceValues.contentType else {
+            let extensionLowercased = url.pathExtension.lowercased()
+            return allowedTypes.contains { type in
+                type.preferredFilenameExtension == extensionLowercased
+            }
+        }
+
+        return allowedTypes.contains { contentType.conforms(to: $0) }
+    }
+
+    static func mediaFileValidationMessage(for url: URL, allowedTypes: [UTType]) -> String {
+        let allowedExtensions = allowedTypes.compactMap { $0.preferredFilenameExtension }
+        if allowedExtensions.isEmpty {
+            return "Only supported media files are allowed."
+        }
+
+        let allowedExtensionsText = allowedExtensions.map { ".\($0)" }.joined(separator: ", ")
+        return "\(url.lastPathComponent)은(는) 지원하지 않는 파일 형식입니다. 허용 형식: \(allowedExtensionsText)"
+    }
+
     static func saveFileWithDialog(filePath: String) {
         let fileURL = URL(fileURLWithPath: filePath)
         let fileManager = FileManager.default

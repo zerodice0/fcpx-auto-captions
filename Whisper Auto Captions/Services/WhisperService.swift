@@ -84,7 +84,7 @@ class WhisperService {
         // Advanced settings
         let effectivePrompt = settings.prompt.isEmpty ? LanguageData.defaultPrompt(for: language) : settings.prompt
         if !effectivePrompt.isEmpty {
-            args += ["--prompt", "\"\(effectivePrompt)\""]
+            args += ["--prompt", effectivePrompt]
         }
 
         if settings.noSpeechThreshold != 0.6 {
@@ -148,52 +148,58 @@ class WhisperService {
             let errorHandle = errorPipe.fileHandleForReading
             let outputHandle = outputPipe.fileHandleForReading
 
-            while task.isRunning || errorHandle.availableData.count > 0 {
-                let errorData = errorHandle.availableData
-                if !errorData.isEmpty {
-                    if let error = String(data: errorData, encoding: .utf8) {
-                        let lines = error.split(separator: "\n")
-                        if let lastLine = lines.last, lastLine.hasPrefix("whisper_full_with_state: progress") {
-                            if let progressString = lastLine.components(separatedBy: "=").last?
-                                .trimmingCharacters(in: .whitespacesAndNewlines)
-                                .dropLast() {
-                                let progressPercentage = Int(progressString) ?? 0
-                                let progress = Double(progressPercentage) * 0.01
+            errorHandle.readabilityHandler = { handle in
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                if let error = String(data: data, encoding: .utf8) {
+                    let lines = error.split(whereSeparator: \.isNewline)
+                    if let lastLine = lines.last, lastLine.hasPrefix("whisper_full_with_state: progress") {
+                        if let progressString = lastLine.components(separatedBy: "=").last?
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .dropLast() {
+                            let progressPercentage = Int(progressString) ?? 0
+                            let progress = Double(progressPercentage) * 0.01
 
-                                let currentTime = Date()
-                                let elapsed = currentTime.timeIntervalSince(startTime)
-                                let remainingSeconds = progress > 0 ? round((1 - progress) / progress * elapsed) : 0
-                                let remainingTime = FileUtility.formatSeconds(remainingSeconds)
+                            let currentTime = Date()
+                            let elapsed = currentTime.timeIntervalSince(startTime)
+                            let remainingSeconds = progress > 0 ? round((1 - progress) / progress * elapsed) : 0
+                            let remainingTime = FileUtility.formatSeconds(remainingSeconds)
 
-                                DispatchQueue.main.async {
-                                    progressCallback(progressPercentage, progress, remainingTime)
-                                }
+                            DispatchQueue.main.async {
+                                progressCallback(progressPercentage, progress, remainingTime)
                             }
                         }
                     }
                 }
+            }
 
-                let outputData = outputHandle.availableData
-                if !outputData.isEmpty {
-                    if let output = String(data: outputData, encoding: .utf8) {
-                        DispatchQueue.main.async {
-                            outputCallback(output)
-                        }
+            outputHandle.readabilityHandler = { handle in
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                if let output = String(data: data, encoding: .utf8) {
+                    DispatchQueue.main.async {
+                        outputCallback(output)
                     }
                 }
             }
 
-            task.waitUntilExit()
+            task.terminationHandler = { terminatedTask in
+                errorHandle.readabilityHandler = nil
+                outputHandle.readabilityHandler = nil
+                _ = outputHandle.readDataToEndOfFile()
+                _ = errorHandle.readDataToEndOfFile()
 
-            DispatchQueue.main.async {
-                progressCallback(100, 1.0, "00:00")
+                if terminatedTask.terminationStatus == 0 {
+                    DispatchQueue.main.async {
+                        progressCallback(100, 1.0, "00:00")
+                    }
+                }
+
+                let srtFilePath = outputWavFilePath + ".srt"
+                completion(srtFilePath)
             }
 
-            // Read any remaining output
-            _ = outputHandle.readDataToEndOfFile()
-
-            let srtFilePath = outputWavFilePath + ".srt"
-            completion(srtFilePath)
+            task.launch()
         }
     }
 }
