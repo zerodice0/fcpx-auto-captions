@@ -21,12 +21,18 @@ Package.resolved
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/skills/
 
 # Serena plugin local data
 .serena/
 
 # Conductor workspace data
 .context/
+
+# Local automation artifacts
+docs/manual-qa-checklist.md
+mcp_audit.db
+mcp_security.log
 
 # Whisper model files
 *.bin
