@@ -70,6 +70,16 @@ struct WhisperSettings: Codable, Equatable {
     // MARK: - Default Instance
     static let `default` = WhisperSettings()
 
+    // MARK: - Preset Updates
+    mutating func applyPresetOwnedSettings(from presetSettings: WhisperSettings) {
+        bestOf = presetSettings.bestOf
+        beamSize = presetSettings.beamSize
+        entropyThreshold = presetSettings.entropyThreshold
+        threads = presetSettings.threads
+        processors = presetSettings.processors
+        flashAttention = presetSettings.flashAttention
+    }
+
     // MARK: - Reset to defaults
     mutating func resetToDefaults() {
         self = WhisperSettings.default

@@ -95,6 +95,10 @@ enum WhisperPreset: String, CaseIterable, Codable, Identifiable {
         return settings
     }
 
+    func apply(to settings: inout WhisperSettings) {
+        settings.applyPresetOwnedSettings(from: self.settings)
+    }
+
     /// Check if given settings match this preset
     func matches(_ settings: WhisperSettings) -> Bool {
         guard self != .custom else { return false }

@@ -108,14 +108,7 @@ class SettingsManager: ObservableObject {
         isUpdatingFromPreset = true
         defer { isUpdatingFromPreset = false }
 
-        var newSettings = preset.settings
-        // Preserve basic settings that shouldn't change with presets
-        newSettings.model = settings.model
-        newSettings.language = settings.language
-        newSettings.fps = settings.fps
-        newSettings.prompt = settings.prompt
-
-        settings = newSettings
+        preset.apply(to: &settings)
     }
 
     func resetToDefaults() {
