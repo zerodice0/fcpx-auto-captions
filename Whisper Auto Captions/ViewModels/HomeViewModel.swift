@@ -490,7 +490,7 @@ class HomeViewModel: ObservableObject {
     }
 
     private func failTranscription(_ message: String) {
-        setActiveWhisperProcess(nil)
+        setActiveExternalProcess(nil)
         status = message
         processingState = .failed(message)
     }
