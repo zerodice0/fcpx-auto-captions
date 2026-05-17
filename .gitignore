@@ -12,12 +12,10 @@
 # Xcode build
 build/
 DerivedData/
-*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
 
 # Swift Package Manager
 .build/
 Packages/
-Package.resolved
 
 # Claude Code local settings
 .claude/settings.json
