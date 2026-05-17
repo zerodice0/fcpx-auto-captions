@@ -43,7 +43,6 @@
 		E1A0B1052B0100010001AAA5 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1152B0100010001AAA5 /* WhisperService.swift */; };
 		E1A0B1062B0100010001AAA6 /* AudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1162B0100010001AAA6 /* AudioService.swift */; };
 		E1A0B1072B0100010001AAA7 /* SRTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1172B0100010001AAA7 /* SRTService.swift */; };
-		E1A0B1082B0100010001AAA8 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1182B0100010001AAA8 /* DownloadService.swift */; };
 		E1A0B1092B0100010001AAA9 /* DownloadDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */; };
 		E1A0B10A2B0100010001AAAA /* SettingsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11A2B0100010001AAAA /* SettingsWindowView.swift */; };
 		E1A0B10B2B0100010001AAAB /* QualitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B11B2B0100010001AAAB /* QualitySettingsView.swift */; };
@@ -101,7 +100,6 @@
 		E1A0B1152B0100010001AAA5 /* WhisperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
 		E1A0B1162B0100010001AAA6 /* AudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioService.swift; sourceTree = "<group>"; };
 		E1A0B1172B0100010001AAA7 /* SRTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTService.swift; sourceTree = "<group>"; };
-		E1A0B1182B0100010001AAA8 /* DownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadService.swift; sourceTree = "<group>"; };
 		E1A0B1192B0100010001AAA9 /* DownloadDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadDelegate.swift; sourceTree = "<group>"; };
 		E1A0B11A2B0100010001AAAA /* SettingsWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowView.swift; sourceTree = "<group>"; };
 		E1A0B11B2B0100010001AAAB /* QualitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualitySettingsView.swift; sourceTree = "<group>"; };
@@ -250,7 +248,6 @@
 				E1A0B1152B0100010001AAA5 /* WhisperService.swift */,
 				E1A0B1162B0100010001AAA6 /* AudioService.swift */,
 				E1A0B1172B0100010001AAA7 /* SRTService.swift */,
-				E1A0B1182B0100010001AAA8 /* DownloadService.swift */,
 				E1A0B1302B0100010001AAC0 /* KeychainService.swift */,
 				E1A0B1312B0100010001AAC1 /* GeminiService.swift */,
 				A2B3C4D5E6F7A8B9C0D1E2F3 /* VideoService.swift */,
@@ -400,7 +397,6 @@
 				E1A0B1052B0100010001AAA5 /* WhisperService.swift in Sources */,
 				E1A0B1062B0100010001AAA6 /* AudioService.swift in Sources */,
 				E1A0B1072B0100010001AAA7 /* SRTService.swift in Sources */,
-				E1A0B1082B0100010001AAA8 /* DownloadService.swift in Sources */,
 				E1A0B1092B0100010001AAA9 /* DownloadDelegate.swift in Sources */,
 				E6894DEF69154D578BC5C8B5 /* AppDirectoryUtility.swift in Sources */,
 				E1A0B10A2B0100010001AAAA /* SettingsWindowView.swift in Sources */,
