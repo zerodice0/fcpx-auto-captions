@@ -51,6 +51,7 @@ class HomeViewModel: ObservableObject {
     private var downloadDelegate: DownloadDelegate?
     private var downloadTask: URLSessionDownloadTask?
     private var isInitializing = true  // Prevents saving during init
+    private let minimumValidModelSize: Int64 = 50 * 1024 * 1024
 
     // MARK: - Initialization
     init() {
@@ -89,7 +90,6 @@ class HomeViewModel: ObservableObject {
 
     // MARK: - Data
     let languages = LanguageData.languages
-    let languagesMapping = LanguageData.languageToCode
     let models = ModelData.models
     let modelsMapping = ModelData.modelToFileName
 
@@ -218,10 +218,16 @@ class HomeViewModel: ObservableObject {
     // MARK: - Main Processing
     func startTranscription() {
         guard let fileURL = fileURL else { return }
-        
+        guard let modelPath = getSelectedModelPath() else {
+            status = "Error: Model file not found"
+            processingState = .failed(status)
+            return
+        }
+
         self.startCreatingAutoCaptions = true
         self.processingState = .running
         self.outputCaptions = ""
+        let settings = SettingsManager.shared.settings
         let filePathString = fileURL.path
         let tempFolder = NSTemporaryDirectory()
 
@@ -234,8 +240,8 @@ class HomeViewModel: ObservableObject {
 
         let segmentDuration = Double(SettingsManager.shared.settings.audioSegmentDuration)
         let validSegmentDuration = segmentDuration > 0 ? segmentDuration : 600.0
-        let splitedWavFilesPaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
-        self.totalBatch = splitedWavFilesPaths.count
+        let splitWavFilePaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
+        self.totalBatch = splitWavFilePaths.count
         self.status = "Generating AI subtitles"
         self.currentBatch = 0
         self.progress = 0.0
@@ -251,11 +257,15 @@ class HomeViewModel: ObservableObject {
             let group = DispatchGroup()
             var failedBatch: Int? = nil
 
-            for (b, splitedWavFilePath) in splitedWavFilesPaths.enumerated() {
+            for (b, splitWavFilePath) in splitWavFilePaths.enumerated() {
                 DispatchQueue.main.async { self.currentBatch = b + 1 }
                 var outputSplitSRTFilePath: String?
                 group.enter()
-                self.runWhisperCli(outputWavFilePath: splitedWavFilePath) { srtFilePath in
+                self.transcribeSegment(
+                    wavPath: splitWavFilePath,
+                    modelPath: modelPath.path,
+                    settings: settings
+                ) { srtFilePath in
                     outputSplitSRTFilePath = srtFilePath
                     group.leave()
                 }
@@ -295,7 +305,7 @@ class HomeViewModel: ObservableObject {
                     segmentDurationSeconds: validSegmentDuration
                 )
 
-                guard self.isValidSrtFile(outputSRTFilePath) else {
+                guard SRTService.shared.isValidSRTFile(outputSRTFilePath) else {
                     self.status = "Error: Merged SRT is invalid"
                     self.processingState = .failed(self.status)
                     return
@@ -319,127 +329,29 @@ class HomeViewModel: ObservableObject {
             }
         }
     }
-    
+
     // MARK: - Whisper CLI Execution
-    private func runWhisperCli(outputWavFilePath: String, completion: @escaping (String) -> Void) {
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else {
-                completion("")
-                return
-            }
-
-            guard let modelPath = self.getSelectedModelPath() else {
-                completion("")
-                return
-            }
-
-            guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil),
-                  let langCode = languagesMapping[selectedLanguage] else {
-                completion("")
-                return
-            }
-
-            let task = Process()
-            task.launchPath = whisperCliPath
-            task.arguments = self.buildWhisperArgs(modelPath: modelPath.path, wavPath: outputWavFilePath, langCode: langCode)
-
-            let errorPipe = Pipe()
-            let outputPipe = Pipe()
-            task.standardError = errorPipe
-            task.standardOutput = outputPipe
-
-            let startTime = Date()
-            let errorHandle = errorPipe.fileHandleForReading
-            let outputHandle = outputPipe.fileHandleForReading
-
-            errorHandle.readabilityHandler = { [weak self] handle in
-                guard let self = self else { return }
-                let errorData = handle.availableData
-                guard !errorData.isEmpty else { return }
-                if let error = String(data: errorData, encoding: .utf8) {
-                    self.parseProgress(from: error, startTime: startTime)
-                }
-            }
-
-            outputHandle.readabilityHandler = { [weak self] handle in
-                guard let self = self else { return }
-                let outputData = handle.availableData
-                guard !outputData.isEmpty else { return }
-                if let captions = String(data: outputData, encoding: .utf8) {
-                    DispatchQueue.main.async { self.outputCaptions += captions }
-                }
-            }
-
-            task.terminationHandler = { [weak self] terminatedTask in
-                guard let self = self else {
-                    completion("")
-                    return
-                }
-
-                errorHandle.readabilityHandler = nil
-                outputHandle.readabilityHandler = nil
-
-                _ = outputHandle.readDataToEndOfFile()
-                _ = errorHandle.readDataToEndOfFile()
-
-                DispatchQueue.main.async {
-                    self.progress = 1.0
-                    self.progressPercentage = 100
-                    self.remainingTime = "00:00"
-                }
-
-                let srtFilePath = outputWavFilePath + ".srt"
-                if terminatedTask.terminationStatus == 0 && self.isValidSrtFile(srtFilePath) {
-                    completion(srtFilePath)
-                } else {
-                    completion("")
-                }
-            }
-
-            task.launch()
-        }
-    }
-    
-    private func buildWhisperArgs(modelPath: String, wavPath: String, langCode: String) -> [String] {
-        var args = ["-m", modelPath, "-l", langCode, "-pp", "-osrt", "-f", wavPath]
-        if langCode == "zh" {
-            let prompt = selectedLanguage == "Chinese Simplified" ? "以下是普通话的句子" : "以下是普通話的句子"
-            args += ["--prompt", prompt]
-        }
-        return args
-    }
-    
-    private func parseProgress(from error: String, startTime: Date) {
-        let lines = error.split(separator: "\n")
-        guard let lastLine = lines.last,
-              lastLine.hasPrefix("whisper_full_with_state: progress"),
-              let progressStr = lastLine.components(separatedBy: "=").last?.trimmingCharacters(in: .whitespacesAndNewlines).dropLast() else {
-            return
-        }
-        
-        let pct = Int(progressStr) ?? 0
-        let prog = Double(pct) * 0.01
-        let elapsed = Date().timeIntervalSince(startTime)
-        let remaining = prog > 0 ? round((1 - prog) / prog * elapsed) : 0
-        
-        DispatchQueue.main.async {
-            self.progressPercentage = pct
-            self.progress = prog
-            self.remainingTime = FileUtility.formatSeconds(remaining)
-        }
-    }
-    
-    private func isValidSrtFile(_ path: String) -> Bool {
-        let fm = FileManager.default
-        guard fm.fileExists(atPath: path),
-              let attrs = try? fm.attributesOfItem(atPath: path),
-              let size = attrs[.size] as? Int64, size > 0,
-              let content = try? String(contentsOfFile: path, encoding: .utf8),
-              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              content.contains("-->") else {
-            return false
-        }
-        return true
+    private func transcribeSegment(
+        wavPath: String,
+        modelPath: String,
+        settings: WhisperSettings,
+        completion: @escaping (String) -> Void
+    ) {
+        WhisperService.shared.transcribe(
+            settings: settings,
+            modelPath: modelPath,
+            selectedLanguage: selectedLanguage,
+            outputWavFilePath: wavPath,
+            progressCallback: { [weak self] percentage, progress, remainingTime in
+                self?.progressPercentage = percentage
+                self?.progress = progress
+                self?.remainingTime = remainingTime
+            },
+            outputCallback: { [weak self] captions in
+                self?.outputCaptions += captions
+            },
+            completion: completion
+        )
     }
 
     // MARK: - Reset
@@ -459,8 +371,6 @@ class HomeViewModel: ObservableObject {
     
     // MARK: - Model Validation
     func validateAndStartTranscription() {
-        let fm = FileManager.default
-
         // Ensure app directory exists
         try? AppDirectoryUtility.ensureDirectoryExists()
 
@@ -474,19 +384,8 @@ class HomeViewModel: ObservableObject {
         guard let modelFileName = modelsMapping[selectedModel],
               let modelPath = try? AppDirectoryUtility.getModelPath(for: modelFileName) else { return }
 
-        if fm.fileExists(atPath: modelPath.path) {
-            let attrs = try? fm.attributesOfItem(atPath: modelPath.path)
-            let size = attrs?[.size] as? Int64 ?? 0
-            if size >= 50 * 1024 * 1024 {
-                startTranscription()
-            } else {
-                try? fm.removeItem(at: modelPath)
-                downloadModel(model: modelFileName) { [weak self] success in
-                    if success { self?.startTranscription() }
-                }
-            }
-        } else {
-            downloadModel(model: modelFileName) { [weak self] success in
+        startOrDownloadModel(at: modelPath) { [weak self] in
+            self?.downloadModel(model: modelFileName) { [weak self] success in
                 if success { self?.startTranscription() }
             }
         }
@@ -494,26 +393,35 @@ class HomeViewModel: ObservableObject {
 
     /// Validate and start transcription for a custom model
     private func validateAndStartCustomModel(_ model: CustomModel) {
-        let fm = FileManager.default
-
         guard let modelPath = try? customModelManager.getCustomModelPath(for: model) else {
             return
         }
 
-        if fm.fileExists(atPath: modelPath.path) {
-            let attrs = try? fm.attributesOfItem(atPath: modelPath.path)
-            let size = attrs?[.size] as? Int64 ?? 0
-            if size >= 50 * 1024 * 1024 {
-                startTranscription()
-            } else {
-                // File exists but is too small - need to re-download
-                try? fm.removeItem(at: modelPath)
-                downloadCustomModel(model)
-            }
-        } else {
-            // Model not downloaded yet
-            downloadCustomModel(model)
+        startOrDownloadModel(at: modelPath) { [weak self] in
+            self?.downloadCustomModel(model)
         }
+    }
+
+    private func startOrDownloadModel(at modelPath: URL, download: @escaping () -> Void) {
+        if isValidModelFile(at: modelPath) {
+            startTranscription()
+            return
+        }
+
+        if FileManager.default.fileExists(atPath: modelPath.path) {
+            try? FileManager.default.removeItem(at: modelPath)
+        }
+
+        download()
+    }
+
+    private func isValidModelFile(at modelPath: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: modelPath.path),
+              let attributes = try? FileManager.default.attributesOfItem(atPath: modelPath.path),
+              let size = attributes[.size] as? Int64 else {
+            return false
+        }
+        return size >= minimumValidModelSize
     }
 
     /// Download a custom model and start transcription when complete

@@ -13,6 +13,22 @@ class SRTService {
     static let shared = SRTService()
     private init() {}
 
+    // MARK: - Validation
+    /// Check whether an SRT file exists and has at least one subtitle timestamp.
+    func isValidSRTFile(_ path: String) -> Bool {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: path),
+              let attributes = try? fileManager.attributesOfItem(atPath: path),
+              let size = attributes[.size] as? Int64,
+              size > 0,
+              let content = try? String(contentsOfFile: path, encoding: .utf8),
+              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              content.contains("-->") else {
+            return false
+        }
+        return true
+    }
+
     // MARK: - Merge SRT Files
     /// Merge multiple SRT files into one, adjusting timestamps
     func mergeSRT(srtFiles: [String], segmentDurationSeconds: TimeInterval = 600.0) -> String {

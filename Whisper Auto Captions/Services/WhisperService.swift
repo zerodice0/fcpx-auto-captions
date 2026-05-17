@@ -107,7 +107,7 @@ class WhisperService {
     /// Run whisper.cpp transcription on a WAV file
     func transcribe(
         settings: WhisperSettings,
-        selectedModel: String,
+        modelPath: String,
         selectedLanguage: String,
         outputWavFilePath: String,
         progressCallback: @escaping ProgressCallback,
@@ -117,21 +117,16 @@ class WhisperService {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
 
-            guard let modelPath = try? AppDirectoryUtility.getModelPath(for: selectedModel) else {
-                completion("")
-                return
-            }
-
-            guard let mainPath = Bundle.main.path(forResource: "main", ofType: nil) else {
+            guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil) else {
                 completion("")
                 return
             }
 
             let task = Process()
-            task.launchPath = mainPath
+            task.launchPath = whisperCliPath
             task.arguments = self.buildArguments(
                 settings: settings,
-                modelPath: modelPath.path,
+                modelPath: modelPath,
                 inputPath: outputWavFilePath,
                 language: selectedLanguage
             )
@@ -142,7 +137,6 @@ class WhisperService {
             task.standardError = errorPipe
             task.standardOutput = outputPipe
 
-            task.launch()
             let startTime = Date()
 
             let errorHandle = errorPipe.fileHandleForReading
@@ -196,7 +190,11 @@ class WhisperService {
                 }
 
                 let srtFilePath = outputWavFilePath + ".srt"
-                completion(srtFilePath)
+                if terminatedTask.terminationStatus == 0 && SRTService.shared.isValidSRTFile(srtFilePath) {
+                    completion(srtFilePath)
+                } else {
+                    completion("")
+                }
             }
 
             task.launch()
