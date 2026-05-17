@@ -10,6 +10,7 @@ import SwiftUI
 /// View for managing custom Whisper models
 struct CustomModelManagementView: View {
     @ObservedObject private var modelManager = CustomModelManager.shared
+    @ObservedObject private var modelDownloadManager = ModelDownloadManager.shared
     @State private var showAddModelSheet = false
     @State private var modelToDelete: CustomModel?
     @State private var showDeleteConfirmation = false
@@ -26,7 +27,7 @@ struct CustomModelManagementView: View {
             }
 
             // Download progress
-            if modelManager.isDownloading {
+            if modelDownloadManager.isDownloading {
                 downloadProgressView
             }
 
@@ -50,19 +51,19 @@ struct CustomModelManagementView: View {
         .alert(
             String(localized: "Download Failed", comment: "Download failure alert title"),
             isPresented: Binding(
-                get: { modelManager.downloadErrorMessage != nil },
+                get: { modelDownloadManager.errorMessage != nil },
                 set: { isPresented in
                     if !isPresented {
-                        modelManager.downloadErrorMessage = nil
+                        modelDownloadManager.errorMessage = nil
                     }
                 }
             )
         ) {
             Button(String(localized: "OK", comment: "OK button")) {
-                modelManager.downloadErrorMessage = nil
+                modelDownloadManager.errorMessage = nil
             }
         } message: {
-            Text(modelManager.downloadErrorMessage ?? "")
+            Text(modelDownloadManager.errorMessage ?? "")
         }
     }
 
@@ -85,6 +86,7 @@ struct CustomModelManagementView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
+            .disabled(modelDownloadManager.isDownloading)
         }
     }
 
@@ -111,6 +113,7 @@ struct CustomModelManagementView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
+            .disabled(modelDownloadManager.isDownloading)
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -125,9 +128,9 @@ struct CustomModelManagementView: View {
                 ForEach(modelManager.customModels) { model in
                     CustomModelRow(
                         model: model,
-                        isDownloading: modelManager.currentDownloadingModel?.id == model.id,
-                        isActionDisabled: modelManager.isDownloading,
-                        downloadProgress: modelManager.currentDownloadingModel?.id == model.id ? modelManager.downloadProgress : 0,
+                        isDownloading: modelDownloadManager.currentTargetID == model.id.uuidString,
+                        isActionDisabled: modelDownloadManager.isDownloading,
+                        downloadProgress: modelDownloadManager.currentTargetID == model.id.uuidString ? modelDownloadManager.progress : 0,
                         onDownload: {
                             modelManager.downloadModel(model) { _, _ in }
                         },
@@ -145,21 +148,21 @@ struct CustomModelManagementView: View {
 
     private var downloadProgressView: some View {
         VStack(spacing: 8) {
-            if let model = modelManager.currentDownloadingModel {
+            if let modelName = modelDownloadManager.currentDisplayName {
                 HStack {
-                    Text(String(localized: "Downloading \(model.name)...", comment: "Downloading model status"))
+                    Text(String(localized: "Downloading \(modelName)...", comment: "Downloading model status"))
                         .font(.subheadline)
                     Spacer()
-                    Text(String(format: "%.0f%%", modelManager.downloadProgress * 100))
+                    Text(String(format: "%.0f%%", modelDownloadManager.progress * 100))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
 
-                ProgressView(value: modelManager.downloadProgress)
+                ProgressView(value: modelDownloadManager.progress)
                     .progressViewStyle(.linear)
 
                 Button(String(localized: "Cancel", comment: "Cancel button")) {
-                    modelManager.cancelDownload()
+                    modelDownloadManager.cancelDownload()
                 }
                 .buttonStyle(.borderless)
                 .foregroundColor(.red)

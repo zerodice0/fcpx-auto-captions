@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 struct AddCustomModelView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var modelManager = CustomModelManager.shared
+    @ObservedObject private var modelDownloadManager = ModelDownloadManager.shared
 
     // MARK: - State
 
@@ -199,7 +200,7 @@ struct AddCustomModelView: View {
             }
             .keyboardShortcut(.defaultAction)
             .buttonStyle(.borderedProminent)
-            .disabled(!isValid)
+            .disabled(!isValid || modelDownloadManager.isDownloading)
         }
         .padding()
     }

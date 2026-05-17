@@ -141,3 +141,107 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
         return "Download failed: \(error.localizedDescription)"
     }
 }
+
+struct ModelDownloadTarget: Equatable {
+    let id: String
+    let displayName: String
+    let fileName: String
+    let url: URL
+}
+
+final class ModelDownloadManager: ObservableObject {
+    static let shared = ModelDownloadManager()
+
+    @Published private(set) var isDownloading = false
+    @Published private(set) var progress: Double = 0.0
+    @Published private(set) var currentTargetID: String?
+    @Published private(set) var currentDisplayName: String?
+    @Published var errorMessage: String?
+
+    private var downloadTask: URLSessionDownloadTask?
+    private var downloadDelegate: DownloadDelegate?
+    private var activeDownloadID: UUID?
+    private var isCancellingDownload = false
+
+    private init() {}
+
+    func download(
+        target: ModelDownloadTarget,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard !isDownloading else {
+            let message = String(localized: "Another model download is already in progress.", comment: "Concurrent model download error")
+            errorMessage = message
+            completion(false, message)
+            return
+        }
+
+        do {
+            try AppDirectoryUtility.ensureDirectoryExists()
+        } catch {
+            let message = String(localized: "Failed to prepare the model storage folder: \(error.localizedDescription)", comment: "Model storage error")
+            errorMessage = message
+            completion(false, message)
+            return
+        }
+
+        let downloadID = UUID()
+        activeDownloadID = downloadID
+        isCancellingDownload = false
+        isDownloading = true
+        progress = 0.0
+        currentTargetID = target.id
+        currentDisplayName = target.displayName
+        errorMessage = nil
+
+        downloadDelegate = DownloadDelegate(
+            model: target.fileName,
+            progressHandler: { [weak self] progress in
+                guard self?.activeDownloadID == downloadID else { return }
+                self?.progress = progress
+            },
+            completionHandler: { [weak self] in
+                guard self?.activeDownloadID == downloadID else { return }
+                self?.finishDownload(errorMessage: nil)
+                completion(true, nil)
+            },
+            errorHandler: { [weak self] errorMessage in
+                guard let self = self else { return }
+                guard self.activeDownloadID == downloadID else { return }
+
+                let wasCancelled = self.isCancellingDownload || errorMessage == "Download cancelled."
+                self.finishDownload(errorMessage: wasCancelled ? nil : errorMessage)
+                completion(false, wasCancelled ? nil : errorMessage)
+            }
+        )
+
+        downloadDelegate?.cancelAction = { [weak self] in
+            self?.progress = 0.0
+            self?.downloadTask?.cancel()
+        }
+
+        let session = URLSession(configuration: .default, delegate: downloadDelegate, delegateQueue: nil)
+        let task = session.downloadTask(with: target.url)
+        downloadTask = task
+        task.resume()
+    }
+
+    func cancelDownload() {
+        isCancellingDownload = true
+        activeDownloadID = nil
+        downloadDelegate?.cancelAction?()
+        finishDownload(errorMessage: nil)
+    }
+
+    private func finishDownload(errorMessage: String?) {
+        isDownloading = false
+        progress = 0.0
+        currentTargetID = nil
+        currentDisplayName = nil
+        downloadTask = nil
+        downloadDelegate = nil
+        activeDownloadID = nil
+        isCancellingDownload = false
+        self.errorMessage = errorMessage
+    }
+}

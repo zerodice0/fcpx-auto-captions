@@ -16,16 +16,10 @@ class CustomModelManager: ObservableObject {
     // MARK: - Published Properties
 
     @Published private(set) var customModels: [CustomModel] = []
-    @Published var downloadProgress: Double = 0.0
-    @Published var isDownloading: Bool = false
-    @Published var currentDownloadingModel: CustomModel?
-    @Published var downloadErrorMessage: String?
 
     // MARK: - Private Properties
 
-    private var downloadTask: URLSessionDownloadTask?
-    private var downloadDelegate: DownloadDelegate?
-    private var isCancellingDownload = false
+    private let modelDownloadManager = ModelDownloadManager.shared
 
     // MARK: - Initialization
 
@@ -151,85 +145,34 @@ class CustomModelManager: ObservableObject {
     ///   - completion: Called with success/failure when complete
     func downloadModel(
         _ model: CustomModel,
-        progressHandler: ((Double) -> Void)? = nil,
         completion: @escaping (Bool, String?) -> Void
     ) {
         guard case .url(let urlString) = model.source,
               let url = URL(string: urlString) else {
             let message = String(localized: "The model download URL is invalid.", comment: "Invalid custom model URL error")
-            downloadErrorMessage = message
+            modelDownloadManager.errorMessage = message
             completion(false, message)
             return
         }
 
-        // Ensure directory exists
-        do {
-            try AppDirectoryUtility.ensureDirectoryExists()
-        } catch {
-            let message = String(localized: "Failed to prepare the model storage folder: \(error.localizedDescription)", comment: "Custom model storage error")
-            downloadErrorMessage = message
-            completion(false, message)
-            return
-        }
+        let target = ModelDownloadTarget(
+            id: model.id.uuidString,
+            displayName: model.name,
+            fileName: model.fileName,
+            url: url
+        )
 
-        currentDownloadingModel = model
-        isDownloading = true
-        downloadProgress = 0.0
-        downloadErrorMessage = nil
-        isCancellingDownload = false
-
-        // Create download delegate
-        downloadDelegate = DownloadDelegate(
-            model: model.fileName,
-            progressHandler: { [weak self] progress in
-                DispatchQueue.main.async {
-                    self?.downloadProgress = progress
-                    progressHandler?(progress)
-                }
-            },
-            completionHandler: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.handleDownloadComplete(model: model, success: true, errorMessage: nil)
-                    completion(true, nil)
-                }
-            },
-            errorHandler: { [weak self] errorMessage in
-                DispatchQueue.main.async {
-                    let wasCancelled = self?.isCancellingDownload == true || errorMessage == "Download cancelled."
-                    self?.handleDownloadComplete(
-                        model: model,
-                        success: false,
-                        errorMessage: wasCancelled ? nil : errorMessage
-                    )
-                    completion(false, wasCancelled ? nil : errorMessage)
-                }
+        modelDownloadManager.download(target: target) { [weak self] success, errorMessage in
+            if success {
+                self?.handleDownloadComplete(model: model)
             }
-        )
-
-        // Set up cancel action
-        downloadDelegate?.cancelAction = { [weak self] in
-            self?.downloadProgress = 0.0
-            self?.downloadTask?.cancel()
+            completion(success, errorMessage)
         }
-
-        // Create session and start download
-        let session = URLSession(
-            configuration: .default,
-            delegate: downloadDelegate,
-            delegateQueue: nil
-        )
-        let task = session.downloadTask(with: url)
-        downloadTask = task
-        task.resume()
     }
 
     /// Cancel the current download
     func cancelDownload() {
-        isCancellingDownload = true
-        downloadDelegate?.cancelAction?()
-        isDownloading = false
-        downloadProgress = 0.0
-        currentDownloadingModel = nil
+        modelDownloadManager.cancelDownload()
     }
 
     // MARK: - Private Methods
@@ -240,22 +183,13 @@ class CustomModelManager: ObservableObject {
         return size
     }
 
-    private func handleDownloadComplete(model: CustomModel, success: Bool, errorMessage: String?) {
-        isDownloading = false
-        downloadProgress = 0.0
-        currentDownloadingModel = nil
-        downloadErrorMessage = success ? nil : errorMessage
-        isCancellingDownload = false
-
-        if success {
-            // Update model status
-            if let index = customModels.firstIndex(where: { $0.id == model.id }) {
-                customModels[index].isDownloaded = true
-                if let path = try? getCustomModelPath(for: model) {
-                    customModels[index].fileSize = getFileSize(atPath: path.path)
-                }
-                saveModels()
+    private func handleDownloadComplete(model: CustomModel) {
+        if let index = customModels.firstIndex(where: { $0.id == model.id }) {
+            customModels[index].isDownloaded = true
+            if let path = try? getCustomModelPath(for: model) {
+                customModels[index].fileSize = getFileSize(atPath: path.path)
             }
+            saveModels()
         }
     }
 

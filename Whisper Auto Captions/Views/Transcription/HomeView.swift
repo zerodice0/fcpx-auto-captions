@@ -5,6 +5,7 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject private var settingsManager = SettingsManager.shared
     @ObservedObject private var customModelManager = CustomModelManager.shared
+    @ObservedObject private var modelDownloadManager = ModelDownloadManager.shared
     @State private var showInvalidFileAlert = false
     @State private var invalidFileErrorMessage = ""
 
@@ -107,7 +108,7 @@ struct HomeView: View {
                             Text(String(localized: "Create", comment: "Create button"))
                         }
                         .buttonStyle(BorderedProminentButtonStyle())
-                        .disabled(!viewModel.canStartTranscription)
+                        .disabled(!viewModel.canStartTranscription || modelDownloadManager.isDownloading)
 
                         if let reason = viewModel.transcriptionBlockReason {
                             Text(reason)
@@ -122,22 +123,22 @@ struct HomeView: View {
             }
             .padding()
 
-            if viewModel.isDownloading {
+            if modelDownloadManager.isDownloading {
                 VStack(spacing: 8) {
                     HStack {
-                        Text(String(localized: "Downloading \(viewModel.selectedModel) Model", comment: "Model download status"))
+                        Text(String(localized: "Downloading \(modelDownloadManager.currentDisplayName ?? viewModel.selectedModel) Model", comment: "Model download status"))
                             .font(.subheadline)
                         Spacer()
-                        Text(String(format: "%.0f%%", viewModel.downloadProgress * 100))
+                        Text(String(format: "%.0f%%", modelDownloadManager.progress * 100))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
 
-                    ProgressView(value: viewModel.downloadProgress)
+                    ProgressView(value: modelDownloadManager.progress)
                         .progressViewStyle(LinearProgressViewStyle())
 
                     Button(String(localized: "Cancel", comment: "Cancel download button")) {
-                        viewModel.cancelDownload()
+                        modelDownloadManager.cancelDownload()
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.red)
@@ -146,10 +147,22 @@ struct HomeView: View {
                 .padding()
             }
         }
-        .alert(String(localized: "Download Failed", comment: "Download failure alert title"), isPresented: $viewModel.showDownloadError) {
-            Button(String(localized: "OK", comment: "OK button")) { }
+        .alert(
+            String(localized: "Download Failed", comment: "Download failure alert title"),
+            isPresented: Binding(
+                get: { modelDownloadManager.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        modelDownloadManager.errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(String(localized: "OK", comment: "OK button")) {
+                modelDownloadManager.errorMessage = nil
+            }
         } message: {
-            Text(viewModel.downloadErrorMessage)
+            Text(modelDownloadManager.errorMessage ?? "")
         }
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsWindowView()
