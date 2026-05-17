@@ -362,97 +362,137 @@ class HomeViewModel: ObservableObject {
                 self.totalBatch = splitWavFilePaths.count
                 self.status = "Generating AI subtitles"
                 self.currentBatch = 0
-            }
-
-            var srtFiles = [String]()
-            let group = DispatchGroup()
-            var failedBatch: Int? = nil
-
-            for (b, splitWavFilePath) in splitWavFilePaths.enumerated() {
-                if self.hasCancellationRequest {
-                    break
-                }
-
-                DispatchQueue.main.async { self.currentBatch = b + 1 }
-                var outputSplitSRTFilePath: String?
-                group.enter()
-                self.transcribeSegment(
-                    wavPath: splitWavFilePath,
+                self.transcribeSegments(
+                    wavPaths: splitWavFilePaths,
+                    nextIndex: 0,
+                    srtFiles: [],
                     modelPath: modelPath.path,
                     settings: settings,
-                    selectedLanguage: language
-                ) { srtFilePath in
-                    outputSplitSRTFilePath = srtFilePath
-                    group.leave()
-                }
-                group.wait()
-
-                if self.hasCancellationRequest {
-                    break
-                }
-
-                if let srtFilePath = outputSplitSRTFilePath, !srtFilePath.isEmpty {
-                    srtFiles.append(srtFilePath)
-                    DispatchQueue.main.async {
-                        self.progress = 0.0
-                        self.progressPercentage = 0
-                    }
-                } else {
-                    failedBatch = b + 1
-                }
+                    selectedLanguage: language,
+                    segmentDurationSeconds: validSegmentDuration,
+                    fps: fps,
+                    projectName: projectName
+                )
             }
+        }
+    }
 
+    private func transcribeSegments(
+        wavPaths: [String],
+        nextIndex: Int,
+        srtFiles: [String],
+        modelPath: String,
+        settings: WhisperSettings,
+        selectedLanguage: String,
+        segmentDurationSeconds: TimeInterval,
+        fps: Float,
+        projectName: String
+    ) {
+        if hasCancellationRequest {
+            finishCancelledTranscription()
+            return
+        }
+
+        guard nextIndex < wavPaths.count else {
+            finishTranscription(
+                srtFiles: srtFiles,
+                segmentDurationSeconds: segmentDurationSeconds,
+                fps: fps,
+                projectName: projectName
+            )
+            return
+        }
+
+        currentBatch = nextIndex + 1
+        transcribeSegment(
+            wavPath: wavPaths[nextIndex],
+            modelPath: modelPath,
+            settings: settings,
+            selectedLanguage: selectedLanguage
+        ) { [weak self] srtFilePath in
             DispatchQueue.main.async {
-                self.progress = 1.0
-                self.progressPercentage = 100
-                self.remainingTime = "00:00"
+                guard let self = self else { return }
 
                 if self.hasCancellationRequest {
                     self.finishCancelledTranscription()
                     return
                 }
 
-                if let failedBatch {
-                    self.status = "Error: Failed to generate subtitles for batch \(failedBatch)"
-                    self.processingState = .failed(self.status)
+                guard !srtFilePath.isEmpty else {
+                    self.failTranscription("Error: Failed to generate subtitles for batch \(nextIndex + 1)")
                     return
                 }
 
-                if srtFiles.isEmpty {
-                    self.status = "Error: No subtitles generated"
-                    self.processingState = .failed(self.status)
-                    return
-                }
-
-                // Use SRTService for merging
-                let outputSRTFilePath = SRTService.shared.mergeSRT(
-                    srtFiles: srtFiles,
-                    segmentDurationSeconds: validSegmentDuration
-                )
-
-                guard SRTService.shared.isValidSRTFile(outputSRTFilePath) else {
-                    self.status = "Error: Merged SRT is invalid"
-                    self.processingState = .failed(self.status)
-                    return
-                }
-
-                let outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
-                    srtPath: outputSRTFilePath,
+                var nextSRTFiles = srtFiles
+                nextSRTFiles.append(srtFilePath)
+                self.progress = 0.0
+                self.progressPercentage = 0
+                self.transcribeSegments(
+                    wavPaths: wavPaths,
+                    nextIndex: nextIndex + 1,
+                    srtFiles: nextSRTFiles,
+                    modelPath: modelPath,
+                    settings: settings,
+                    selectedLanguage: selectedLanguage,
+                    segmentDurationSeconds: segmentDurationSeconds,
                     fps: fps,
                     projectName: projectName
                 )
-                guard FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) else {
-                    self.status = "Error: Failed to generate FCPXML"
-                    self.processingState = .failed(self.status)
-                    return
-                }
-
-                self.status = "Done"
-                self.outputSRTFilePath = outputSRTFilePath
-                self.outputFCPXMLFilePath = outputFCPXMLFilePath
-                self.processingState = .succeeded
             }
         }
+    }
+
+    private func finishTranscription(
+        srtFiles: [String],
+        segmentDurationSeconds: TimeInterval,
+        fps: Float,
+        projectName: String
+    ) {
+        progress = 1.0
+        progressPercentage = 100
+        remainingTime = "00:00"
+
+        if hasCancellationRequest {
+            finishCancelledTranscription()
+            return
+        }
+
+        guard !srtFiles.isEmpty else {
+            failTranscription("Error: No subtitles generated")
+            return
+        }
+
+        // Use SRTService for merging
+        let outputSRTFilePath = SRTService.shared.mergeSRT(
+            srtFiles: srtFiles,
+            segmentDurationSeconds: segmentDurationSeconds
+        )
+
+        guard SRTService.shared.isValidSRTFile(outputSRTFilePath) else {
+            failTranscription("Error: Merged SRT is invalid")
+            return
+        }
+
+        let outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
+            srtPath: outputSRTFilePath,
+            fps: fps,
+            projectName: projectName
+        )
+        guard FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) else {
+            failTranscription("Error: Failed to generate FCPXML")
+            return
+        }
+
+        status = "Done"
+        self.outputSRTFilePath = outputSRTFilePath
+        self.outputFCPXMLFilePath = outputFCPXMLFilePath
+        processingState = .succeeded
+    }
+
+    private func failTranscription(_ message: String) {
+        setActiveWhisperProcess(nil)
+        status = message
+        processingState = .failed(message)
     }
 
     // MARK: - Whisper CLI Execution

@@ -115,91 +115,87 @@ class WhisperService {
         outputCallback: @escaping OutputCallback,
         completion: @escaping CompletionCallback
     ) {
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else { return }
+        guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil) else {
+            completion("")
+            return
+        }
 
-            guard let whisperCliPath = Bundle.main.path(forResource: "whisper-cli", ofType: nil) else {
-                completion("")
-                return
-            }
+        let task = Process()
+        task.launchPath = whisperCliPath
+        task.arguments = buildArguments(
+            settings: settings,
+            modelPath: modelPath,
+            inputPath: outputWavFilePath,
+            language: selectedLanguage
+        )
 
-            let task = Process()
-            task.launchPath = whisperCliPath
-            task.arguments = self.buildArguments(
-                settings: settings,
-                modelPath: modelPath,
-                inputPath: outputWavFilePath,
-                language: selectedLanguage
-            )
+        let errorPipe = Pipe()
+        let outputPipe = Pipe()
 
-            let errorPipe = Pipe()
-            let outputPipe = Pipe()
+        task.standardError = errorPipe
+        task.standardOutput = outputPipe
 
-            task.standardError = errorPipe
-            task.standardOutput = outputPipe
+        let startTime = Date()
 
-            let startTime = Date()
+        let errorHandle = errorPipe.fileHandleForReading
+        let outputHandle = outputPipe.fileHandleForReading
 
-            let errorHandle = errorPipe.fileHandleForReading
-            let outputHandle = outputPipe.fileHandleForReading
+        errorHandle.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            if let error = String(data: data, encoding: .utf8) {
+                let lines = error.split(whereSeparator: \.isNewline)
+                if let lastLine = lines.last, lastLine.hasPrefix("whisper_full_with_state: progress") {
+                    if let progressString = lastLine.components(separatedBy: "=").last?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .dropLast() {
+                        let progressPercentage = Int(progressString) ?? 0
+                        let progress = Double(progressPercentage) * 0.01
 
-            errorHandle.readabilityHandler = { handle in
-                let data = handle.availableData
-                guard !data.isEmpty else { return }
-                if let error = String(data: data, encoding: .utf8) {
-                    let lines = error.split(whereSeparator: \.isNewline)
-                    if let lastLine = lines.last, lastLine.hasPrefix("whisper_full_with_state: progress") {
-                        if let progressString = lastLine.components(separatedBy: "=").last?
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                            .dropLast() {
-                            let progressPercentage = Int(progressString) ?? 0
-                            let progress = Double(progressPercentage) * 0.01
+                        let currentTime = Date()
+                        let elapsed = currentTime.timeIntervalSince(startTime)
+                        let remainingSeconds = progress > 0 ? round((1 - progress) / progress * elapsed) : 0
+                        let remainingTime = FileUtility.formatSeconds(remainingSeconds)
 
-                            let currentTime = Date()
-                            let elapsed = currentTime.timeIntervalSince(startTime)
-                            let remainingSeconds = progress > 0 ? round((1 - progress) / progress * elapsed) : 0
-                            let remainingTime = FileUtility.formatSeconds(remainingSeconds)
-
-                            DispatchQueue.main.async {
-                                progressCallback(progressPercentage, progress, remainingTime)
-                            }
+                        DispatchQueue.main.async {
+                            progressCallback(progressPercentage, progress, remainingTime)
                         }
                     }
                 }
             }
-
-            outputHandle.readabilityHandler = { handle in
-                let data = handle.availableData
-                guard !data.isEmpty else { return }
-                if let output = String(data: data, encoding: .utf8) {
-                    DispatchQueue.main.async {
-                        outputCallback(output)
-                    }
-                }
-            }
-
-            task.terminationHandler = { terminatedTask in
-                errorHandle.readabilityHandler = nil
-                outputHandle.readabilityHandler = nil
-                _ = outputHandle.readDataToEndOfFile()
-                _ = errorHandle.readDataToEndOfFile()
-
-                if terminatedTask.terminationStatus == 0 {
-                    DispatchQueue.main.async {
-                        progressCallback(100, 1.0, "00:00")
-                    }
-                }
-
-                let srtFilePath = outputWavFilePath + ".srt"
-                if terminatedTask.terminationStatus == 0 && SRTService.shared.isValidSRTFile(srtFilePath) {
-                    completion(srtFilePath)
-                } else {
-                    completion("")
-                }
-            }
-
-            task.launch()
-            processStarted?(task)
         }
+
+        outputHandle.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            if let output = String(data: data, encoding: .utf8) {
+                DispatchQueue.main.async {
+                    outputCallback(output)
+                }
+            }
+        }
+
+        task.terminationHandler = { terminatedTask in
+            errorHandle.readabilityHandler = nil
+            outputHandle.readabilityHandler = nil
+            _ = outputHandle.readDataToEndOfFile()
+            _ = errorHandle.readDataToEndOfFile()
+
+            if terminatedTask.terminationStatus == 0 {
+                DispatchQueue.main.async {
+                    progressCallback(100, 1.0, "00:00")
+                }
+            }
+
+            let srtFilePath = outputWavFilePath + ".srt"
+            if terminatedTask.terminationStatus == 0 && SRTService.shared.isValidSRTFile(srtFilePath) {
+                completion(srtFilePath)
+            } else {
+                completion("")
+            }
+        }
+
+        task.launch()
+        processStarted?(task)
     }
 }
