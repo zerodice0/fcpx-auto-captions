@@ -32,6 +32,7 @@ class HomeViewModel: ObservableObject {
         case idle
         case running
         case succeeded
+        case cancelled
         case failed(String)
     }
 
@@ -52,6 +53,9 @@ class HomeViewModel: ObservableObject {
     private var downloadTask: URLSessionDownloadTask?
     private var isInitializing = true  // Prevents saving during init
     private let minimumValidModelSize: Int64 = 50 * 1024 * 1024
+    private let transcriptionControlQueue = DispatchQueue(label: "WhisperAutoCaptions.HomeViewModel.transcription")
+    private var activeWhisperProcess: Process?
+    private var cancellationRequested = false
 
     // MARK: - Initialization
     init() {
@@ -143,6 +147,69 @@ class HomeViewModel: ObservableObject {
     var isProcessingFinished: Bool {
         return !isProcessingRunning
     }
+
+    var canStartTranscription: Bool {
+        return fileURL != nil && isFpsValid && !SettingsManager.shared.settings.noTimestamps
+    }
+
+    var transcriptionBlockReason: String? {
+        if fileURL == nil {
+            return nil
+        }
+        if !isFpsValid {
+            return String(localized: "Frame rate must be between 0 and 120.", comment: "Invalid frame rate transcription warning")
+        }
+        if SettingsManager.shared.settings.noTimestamps {
+            return String(localized: "Disable Timestamps must be turned off to create SRT and FCPXML captions.", comment: "No timestamps transcription warning")
+        }
+        return nil
+    }
+
+    private var hasCancellationRequest: Bool {
+        transcriptionControlQueue.sync {
+            cancellationRequested
+        }
+    }
+
+    private func beginTranscriptionRun() {
+        transcriptionControlQueue.sync {
+            cancellationRequested = false
+            activeWhisperProcess = nil
+        }
+    }
+
+    private func setActiveWhisperProcess(_ process: Process?) {
+        transcriptionControlQueue.sync {
+            activeWhisperProcess = process
+        }
+    }
+
+    func cancelTranscription() {
+        let process = transcriptionControlQueue.sync { () -> Process? in
+            cancellationRequested = true
+            return activeWhisperProcess
+        }
+
+        process?.terminate()
+        status = String(localized: "Cancelling...", comment: "Transcription cancellation in progress status")
+    }
+
+    private func finishCancelledTranscription() {
+        setActiveWhisperProcess(nil)
+        let update = {
+            self.progress = 0.0
+            self.progressPercentage = 0
+            self.remainingTime = "00:00"
+            self.status = String(localized: "Cancelled", comment: "Transcription cancelled status")
+            self.processingState = .cancelled
+        }
+
+        if Thread.isMainThread {
+            update()
+        } else {
+            DispatchQueue.main.async(execute: update)
+        }
+    }
     
     // MARK: - File Selection
     func selectFile(url: URL) {
@@ -224,56 +291,92 @@ class HomeViewModel: ObservableObject {
             return
         }
 
+        beginTranscriptionRun()
         self.startCreatingAutoCaptions = true
         self.processingState = .running
         self.outputCaptions = ""
         let settings = SettingsManager.shared.settings
         let filePathString = fileURL.path
         let tempFolder = NSTemporaryDirectory()
-
-        // Prepare audio for whisper.cpp (converts to 16kHz WAV if needed)
-        let outputWavFilePath = AudioService.shared.prepareAudioForWhisper(
-            inputPath: filePathString,
-            projectName: projectName,
-            tempFolder: tempFolder
-        )
-
-        let segmentDuration = Double(SettingsManager.shared.settings.audioSegmentDuration)
-        let validSegmentDuration = segmentDuration > 0 ? segmentDuration : 600.0
-        let splitWavFilePaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
-        self.totalBatch = splitWavFilePaths.count
-        self.status = "Generating AI subtitles"
-        self.currentBatch = 0
+        let projectName = self.projectName
+        let fps = self.currentFps
+        let language = self.selectedLanguage
+        self.totalBatch = 100000
+        self.status = String(localized: "Preparing audio...", comment: "Preparing audio status")
+        self.currentBatch = -100000
         self.progress = 0.0
         self.progressPercentage = 0
         self.remainingTime = "00:00"
         self.outputSRTFilePath = ""
         self.outputFCPXMLFilePath = ""
 
-        var srtFiles = [String]()
-
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
+            // Prepare audio for whisper.cpp (converts to 16kHz WAV if needed)
+            let outputWavFilePath = AudioService.shared.prepareAudioForWhisper(
+                inputPath: filePathString,
+                projectName: projectName,
+                tempFolder: tempFolder
+            )
+
+            if self.hasCancellationRequest {
+                self.finishCancelledTranscription()
+                return
+            }
+
+            guard FileManager.default.fileExists(atPath: outputWavFilePath) else {
+                DispatchQueue.main.async {
+                    self.status = "Error: Failed to prepare audio"
+                    self.processingState = .failed(self.status)
+                }
+                return
+            }
+
+            let segmentDuration = Double(settings.audioSegmentDuration)
+            let validSegmentDuration = segmentDuration > 0 ? segmentDuration : 600.0
+            let splitWavFilePaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
+
+            if self.hasCancellationRequest {
+                self.finishCancelledTranscription()
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.totalBatch = splitWavFilePaths.count
+                self.status = "Generating AI subtitles"
+                self.currentBatch = 0
+            }
+
+            var srtFiles = [String]()
             let group = DispatchGroup()
             var failedBatch: Int? = nil
 
             for (b, splitWavFilePath) in splitWavFilePaths.enumerated() {
+                if self.hasCancellationRequest {
+                    break
+                }
+
                 DispatchQueue.main.async { self.currentBatch = b + 1 }
                 var outputSplitSRTFilePath: String?
                 group.enter()
                 self.transcribeSegment(
                     wavPath: splitWavFilePath,
                     modelPath: modelPath.path,
-                    settings: settings
+                    settings: settings,
+                    selectedLanguage: language
                 ) { srtFilePath in
                     outputSplitSRTFilePath = srtFilePath
                     group.leave()
                 }
                 group.wait()
 
+                if self.hasCancellationRequest {
+                    break
+                }
+
                 if let srtFilePath = outputSplitSRTFilePath, !srtFilePath.isEmpty {
+                    srtFiles.append(srtFilePath)
                     DispatchQueue.main.async {
-                        srtFiles.append(srtFilePath)
                         self.progress = 0.0
                         self.progressPercentage = 0
                     }
@@ -286,6 +389,11 @@ class HomeViewModel: ObservableObject {
                 self.progress = 1.0
                 self.progressPercentage = 100
                 self.remainingTime = "00:00"
+
+                if self.hasCancellationRequest {
+                    self.finishCancelledTranscription()
+                    return
+                }
 
                 if let failedBatch {
                     self.status = "Error: Failed to generate subtitles for batch \(failedBatch)"
@@ -313,8 +421,8 @@ class HomeViewModel: ObservableObject {
 
                 let outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
                     srtPath: outputSRTFilePath,
-                    fps: self.currentFps,
-                    projectName: self.projectName
+                    fps: fps,
+                    projectName: projectName
                 )
                 guard FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) else {
                     self.status = "Error: Failed to generate FCPXML"
@@ -335,6 +443,7 @@ class HomeViewModel: ObservableObject {
         wavPath: String,
         modelPath: String,
         settings: WhisperSettings,
+        selectedLanguage: String,
         completion: @escaping (String) -> Void
     ) {
         WhisperService.shared.transcribe(
@@ -342,6 +451,9 @@ class HomeViewModel: ObservableObject {
             modelPath: modelPath,
             selectedLanguage: selectedLanguage,
             outputWavFilePath: wavPath,
+            processStarted: { [weak self] process in
+                self?.setActiveWhisperProcess(process)
+            },
             progressCallback: { [weak self] percentage, progress, remainingTime in
                 self?.progressPercentage = percentage
                 self?.progress = progress
@@ -350,7 +462,10 @@ class HomeViewModel: ObservableObject {
             outputCallback: { [weak self] captions in
                 self?.outputCaptions += captions
             },
-            completion: completion
+            completion: { [weak self] srtFilePath in
+                self?.setActiveWhisperProcess(nil)
+                completion(srtFilePath)
+            }
         )
     }
 
@@ -371,6 +486,14 @@ class HomeViewModel: ObservableObject {
     
     // MARK: - Model Validation
     func validateAndStartTranscription() {
+        guard canStartTranscription else {
+            if let reason = transcriptionBlockReason {
+                status = "Error: \(reason)"
+                processingState = .failed(status)
+            }
+            return
+        }
+
         // Ensure app directory exists
         try? AppDirectoryUtility.ensureDirectoryExists()
 

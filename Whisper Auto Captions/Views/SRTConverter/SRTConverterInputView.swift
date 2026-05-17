@@ -115,6 +115,11 @@ struct SRTConverterInputView: View {
                 availableFonts: viewModel.availableFonts
             )
         }
+        .alert(String(localized: "Conversion Failed", comment: "SRT conversion failure alert title"), isPresented: $viewModel.showConversionError) {
+            Button(String(localized: "OK", comment: "OK button"), role: .cancel) { }
+        } message: {
+            Text(viewModel.conversionErrorMessage)
+        }
     }
 
     // MARK: - Actions

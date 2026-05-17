@@ -18,6 +18,14 @@ struct ProcessView: View {
                 HStack {
                     Text("Project: \(viewModel.projectName)").font(.title2)
                     Spacer()
+                    if viewModel.isProcessingRunning {
+                        Button(action: {
+                            viewModel.cancelTranscription()
+                        }) {
+                            Image(systemName: "xmark.circle")
+                            Text(String(localized: "Cancel", comment: "Cancel transcription button"))
+                        }
+                    }
                     Button(action: {
                         viewModel.reset()
                     }) {

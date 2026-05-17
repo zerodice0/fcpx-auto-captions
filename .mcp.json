@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "macos-ui-automation": {
-      "command": "uvx",
-      "args": ["macos-ui-automation-mcp"]
-    }
-  }
-}

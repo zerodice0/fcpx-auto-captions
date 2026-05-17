@@ -110,6 +110,7 @@ class WhisperService {
         modelPath: String,
         selectedLanguage: String,
         outputWavFilePath: String,
+        processStarted: ((Process) -> Void)? = nil,
         progressCallback: @escaping ProgressCallback,
         outputCallback: @escaping OutputCallback,
         completion: @escaping CompletionCallback
@@ -198,6 +199,7 @@ class WhisperService {
             }
 
             task.launch()
+            processStarted?(task)
         }
     }
 }

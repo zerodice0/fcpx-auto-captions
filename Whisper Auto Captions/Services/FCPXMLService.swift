@@ -128,7 +128,7 @@ struct FCPXMLService {
             sequenceElement.addSafeAttribute(name: "tcFormat", value: "NDF")
             sequenceElement.addSafeAttribute(name: "audioLayout", value: "stereo")
             sequenceElement.addSafeAttribute(name: "audioRate", value: "48k")
-            sequenceElement.addSafeAttribute(name: "duration", value: "\(totalFrame)/\(hundredFoldFps)s")
+            sequenceElement.addSafeAttribute(name: "duration", value: "\(hundredFoldTotalFrame)/\(hundredFoldFps)s")
             projectElement.addChild(sequenceElement)
 
             // Spine

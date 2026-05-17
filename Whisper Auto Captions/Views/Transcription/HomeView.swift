@@ -102,11 +102,20 @@ struct HomeView: View {
 
                 // Action Buttons
                 GridRow {
-                    Button(action: viewModel.validateAndStartTranscription) {
-                        Text(String(localized: "Create", comment: "Create button"))
+                    VStack(spacing: 8) {
+                        Button(action: viewModel.validateAndStartTranscription) {
+                            Text(String(localized: "Create", comment: "Create button"))
+                        }
+                        .buttonStyle(BorderedProminentButtonStyle())
+                        .disabled(!viewModel.canStartTranscription)
+
+                        if let reason = viewModel.transcriptionBlockReason {
+                            Text(reason)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                        }
                     }
-                    .buttonStyle(BorderedProminentButtonStyle())
-                    .disabled(viewModel.fileURL == nil || !viewModel.isFpsValid)
                 }
                 .gridCellColumns(2)
                 .gridCellAnchor(.center)

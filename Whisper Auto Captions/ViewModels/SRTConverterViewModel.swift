@@ -12,6 +12,8 @@ class SRTConverterViewModel: ObservableObject {
     @Published var projectName: String = ""
     @Published var outputFCPXMLFilePath = ""
     @Published var conversionComplete = false
+    @Published var showConversionError = false
+    @Published var conversionErrorMessage = ""
 
     // Resolution settings
     @Published var selectedResolution: VideoResolution = .fullHD1080p {
@@ -138,6 +140,12 @@ class SRTConverterViewModel: ObservableObject {
         guard let srtURL = srtFileURL else { return }
 
         let srtPath = srtURL.path
+        guard SRTService.shared.isValidSRTFile(srtPath) else {
+            conversionErrorMessage = String(localized: "The selected SRT file is empty or does not contain valid subtitle timestamps.", comment: "Invalid SRT conversion error")
+            showConversionError = true
+            return
+        }
+
         outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
             srtPath: srtPath,
             fps: currentFps,
@@ -149,12 +157,17 @@ class SRTConverterViewModel: ObservableObject {
 
         if FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) {
             conversionComplete = true
+        } else {
+            conversionErrorMessage = String(localized: "Failed to create a valid FCPXML file. Please check the SRT content and try again.", comment: "FCPXML conversion failed error")
+            showConversionError = true
         }
     }
 
     // MARK: - Reset
     func reset() {
         conversionComplete = false
+        showConversionError = false
+        conversionErrorMessage = ""
         outputFCPXMLFilePath = ""
         srtFileURL = nil
         fileName = ""
