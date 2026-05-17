@@ -21,10 +21,11 @@ struct FCPXMLService {
     // MARK: - Time Conversion
     static func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
         // Convert SRT time to milliseconds
-        guard srtTime.count >= 4 else { return 0 }
+        let normalizedSrtTime = srtTime.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedSrtTime.count >= 4 else { return 0 }
 
-        let ms = Int(srtTime.suffix(3)) ?? 0
-        let timeComponents = srtTime.prefix(srtTime.count - 4).split(separator: ":")
+        let ms = Int(normalizedSrtTime.suffix(3)) ?? 0
+        let timeComponents = normalizedSrtTime.prefix(normalizedSrtTime.count - 4).split(separator: ":")
 
         guard timeComponents.count >= 3,
               let hours = Int(timeComponents[0]),
@@ -43,9 +44,10 @@ struct FCPXMLService {
     static func srtToFCPXML(srtPath: String, fps: Float, projectName: String, width: Int = 1920, height: Int = 1080, titleStyle: TitleStyleSettings = .default) -> String {
         do {
             let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
+            let normalizedSrtContent = srtContent.normalizedSRTLineEndings
 
             // Validate SRT content is not empty
-            let trimmedContent = srtContent.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedContent = normalizedSrtContent.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedContent.isEmpty else {
                 print("Error: SRT file is empty")
                 return "Error: SRT file is empty"
