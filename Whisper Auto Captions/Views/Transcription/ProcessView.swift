@@ -10,6 +10,8 @@ struct ProcessView: View {
     #endif
     
     @ObservedObject var viewModel: HomeViewModel
+    @State private var showOperationError = false
+    @State private var operationErrorMessage = ""
 
     var body: some View {
         GeometryReader { geometry in
@@ -29,8 +31,8 @@ struct ProcessView: View {
                     Button(action: {
                         viewModel.reset()
                     }) {
-                        Image(systemName: "arrow.counterclockwise")
-                        Text("Reset")
+                        Image(systemName: "checkmark.circle")
+                        Text(String(localized: "Back to Home", comment: "Return to home after processing button"))
                     }
                     .disabled(!viewModel.isProcessingFinished)
                 }
@@ -73,13 +75,11 @@ struct ProcessView: View {
                 
                 // Download Buttons
                 HStack {
-                    Text("Download files: ").font(.title2)
-                    
                     Button(action: {
-                        FileUtility.saveFileWithDialog(filePath: viewModel.outputSRTFilePath)
+                        saveFile(viewModel.outputSRTFilePath)
                     }) {
                         Image(systemName: "square.and.arrow.down")
-                        Text("Download .srt file")
+                        Text(String(localized: "Save .srt", comment: "Save SRT output button"))
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
@@ -87,26 +87,14 @@ struct ProcessView: View {
                     .disabled(!viewModel.isProcessingComplete)
 
                     Button(action: {
-                        FileUtility.saveFileWithDialog(filePath: viewModel.outputFCPXMLFilePath)
+                        saveFile(viewModel.outputFCPXMLFilePath)
                     }) {
                         Image(systemName: "square.and.arrow.down")
-                        Text("Download .fcpxml file")
+                        Text(String(localized: "Save .fcpxml", comment: "Save FCPXML output button"))
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .tint(.blue)
-                    .disabled(!viewModel.isProcessingComplete)
-
-                    Button(action: {
-                        FileUtility.saveFileWithDialog(filePath: viewModel.outputSRTFilePath)
-                        FileUtility.saveFileWithDialog(filePath: viewModel.outputFCPXMLFilePath)
-                    }) {
-                        Image(systemName: "folder.badge.plus")
-                        Text("Download All")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .tint(.green)
                     .disabled(!viewModel.isProcessingComplete)
                 }
                 .padding()
@@ -115,11 +103,10 @@ struct ProcessView: View {
                 
                 // Open in Final Cut Pro
                 HStack {
-                    Text("Open in Final Cut Pro: ")
-                        .font(.title2)
                     OpenInFinalCutProButton(
                         fcpxmlPath: viewModel.outputFCPXMLFilePath,
-                        label: "Click here to check auto captions in Final Cut Pro X"
+                        label: String(localized: "Open .fcpxml in Final Cut Pro", comment: "Open FCPXML in Final Cut Pro button"),
+                        onFailure: presentOperationError
                     )
                     .disabled(!viewModel.isProcessingComplete)
                 }
@@ -162,6 +149,11 @@ struct ProcessView: View {
             }
         }
         .padding()
+        .alert(String(localized: "Action Failed", comment: "Operation failure alert title"), isPresented: $showOperationError) {
+            Button(String(localized: "OK", comment: "OK button")) { }
+        } message: {
+            Text(operationErrorMessage)
+        }
         #if DEBUG
         .enableInjection()
         #endif
@@ -172,5 +164,18 @@ struct ProcessView: View {
         let current = viewModel.currentBatch == -100000 ? "···" : String(viewModel.currentBatch)
         let total = viewModel.totalBatch == 100000 ? "···" : String(viewModel.totalBatch)
         return "\(current) / \(total)"
+    }
+
+    private func saveFile(_ path: String) {
+        FileUtility.saveFileWithDialog(filePath: path) { result in
+            if case .failure(let error) = result {
+                presentOperationError(error.localizedDescription)
+            }
+        }
+    }
+
+    private func presentOperationError(_ message: String) {
+        operationErrorMessage = message
+        showOperationError = true
     }
 }

@@ -5,6 +5,16 @@ import SwiftUI
 class SRTConverterViewModel: ObservableObject {
     // MARK: - Dependencies
     private let settingsManager = SettingsManager.shared
+    private let defaults = UserDefaults.standard
+    private var isInitializing = true
+
+    private enum ConverterStorageKeys {
+        static let selectedResolution = "srtConverterSelectedResolution"
+        static let customWidth = "srtConverterCustomWidth"
+        static let customHeight = "srtConverterCustomHeight"
+        static let selectedFrameRate = "srtConverterSelectedFrameRate"
+        static let customFps = "srtConverterCustomFps"
+    }
 
     // MARK: - Published Properties
     @Published var srtFileURL: URL?
@@ -19,22 +29,33 @@ class SRTConverterViewModel: ObservableObject {
     @Published var selectedResolution: VideoResolution = .fullHD1080p {
         didSet {
             updatePositionForResolution()
+            saveConverterSettings()
         }
     }
     @Published var customWidth: String = "1920" {
         didSet {
             updatePositionForResolution()
+            saveConverterSettings()
         }
     }
     @Published var customHeight: String = "1080" {
         didSet {
             updatePositionForResolution()
+            saveConverterSettings()
         }
     }
 
     // Frame rate settings
-    @Published var selectedFrameRate: FrameRate = .fps30
-    @Published var customFps: String = "30"
+    @Published var selectedFrameRate: FrameRate = .fps30 {
+        didSet {
+            saveConverterSettings()
+        }
+    }
+    @Published var customFps: String = "30" {
+        didSet {
+            saveConverterSettings()
+        }
+    }
 
     // Title style settings (synced with SettingsManager)
     @Published var titleStyle: TitleStyleSettings = .default
@@ -53,11 +74,44 @@ class SRTConverterViewModel: ObservableObject {
 
     // MARK: - Initialization
     init() {
+        loadConverterSettings()
+
         // Load saved title style settings
         titleStyle = settingsManager.titleStyleSettings
+        isInitializing = false
+        updatePositionForResolution()
 
         // Load font list in background to avoid blocking UI
         loadFontsAsync()
+    }
+
+    private func loadConverterSettings() {
+        if let resolutionRaw = defaults.string(forKey: ConverterStorageKeys.selectedResolution),
+           let resolution = VideoResolution(rawValue: resolutionRaw) {
+            selectedResolution = resolution
+        }
+
+        customWidth = defaults.string(forKey: ConverterStorageKeys.customWidth) ?? customWidth
+        customHeight = defaults.string(forKey: ConverterStorageKeys.customHeight) ?? customHeight
+
+        if let frameRateRaw = defaults.string(forKey: ConverterStorageKeys.selectedFrameRate),
+           let frameRate = FrameRate(rawValue: frameRateRaw) {
+            selectedFrameRate = frameRate
+        } else if let savedFrameRate = FrameRate(rawValue: settingsManager.settings.selectedFrameRate) {
+            selectedFrameRate = savedFrameRate
+        }
+
+        customFps = defaults.string(forKey: ConverterStorageKeys.customFps) ?? settingsManager.settings.customFps
+    }
+
+    private func saveConverterSettings() {
+        guard !isInitializing else { return }
+
+        defaults.set(selectedResolution.rawValue, forKey: ConverterStorageKeys.selectedResolution)
+        defaults.set(customWidth, forKey: ConverterStorageKeys.customWidth)
+        defaults.set(customHeight, forKey: ConverterStorageKeys.customHeight)
+        defaults.set(selectedFrameRate.rawValue, forKey: ConverterStorageKeys.selectedFrameRate)
+        defaults.set(customFps, forKey: ConverterStorageKeys.customFps)
     }
 
     /// Load system fonts asynchronously

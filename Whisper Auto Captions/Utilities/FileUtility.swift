@@ -4,6 +4,19 @@ import UniformTypeIdentifiers
 
 // MARK: - File Utility
 struct FileUtility {
+    enum SaveFileError: LocalizedError {
+        case sourceMissing(String)
+        case copyFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .sourceMissing(let path):
+                return String(localized: "The source file could not be found: \(path)", comment: "Source file missing save error")
+            case .copyFailed(let message):
+                return String(localized: "Failed to save the file: \(message)", comment: "File save failed error")
+            }
+        }
+    }
     
     // MARK: - Time Formatting
     /// Format seconds into a human-readable time string (MM:SS or HH:MM:SS)
@@ -77,12 +90,16 @@ struct FileUtility {
         return "\(url.lastPathComponent)은(는) 지원하지 않는 파일 형식입니다. 허용 형식: \(allowedExtensionsText)"
     }
 
-    static func saveFileWithDialog(filePath: String) {
+    static func saveFileWithDialog(
+        filePath: String,
+        completion: ((Result<URL, Error>) -> Void)? = nil
+    ) {
         let fileURL = URL(fileURLWithPath: filePath)
         let fileManager = FileManager.default
 
         // Verify source file exists
         guard fileManager.fileExists(atPath: filePath) else {
+            completion?(.failure(SaveFileError.sourceMissing(filePath)))
             return
         }
 
@@ -107,8 +124,9 @@ struct FileUtility {
                         try fileManager.removeItem(at: destinationURL)
                     }
                     try fileManager.copyItem(at: fileURL, to: destinationURL)
+                    completion?(.success(destinationURL))
                 } catch {
-                    // Handle error silently
+                    completion?(.failure(SaveFileError.copyFailed(error.localizedDescription)))
                 }
             }
         }

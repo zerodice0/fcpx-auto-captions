@@ -10,6 +10,8 @@ struct SRTConverterResultView: View {
     #endif
     
     @ObservedObject var viewModel: SRTConverterViewModel
+    @State private var showOperationError = false
+    @State private var operationErrorMessage = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -28,7 +30,7 @@ struct SRTConverterResultView: View {
             // Action Buttons
             HStack(spacing: 16) {
                 Button(action: {
-                    FileUtility.saveFileWithDialog(filePath: viewModel.outputFCPXMLFilePath)
+                    saveFile(viewModel.outputFCPXMLFilePath)
                 }) {
                     Image(systemName: "square.and.arrow.down")
                     Text("Download .fcpxml")
@@ -37,7 +39,10 @@ struct SRTConverterResultView: View {
                 .controlSize(.large)
                 .tint(.blue)
 
-                OpenInFinalCutProButton(fcpxmlPath: viewModel.outputFCPXMLFilePath)
+                OpenInFinalCutProButton(
+                    fcpxmlPath: viewModel.outputFCPXMLFilePath,
+                    onFailure: presentOperationError
+                )
             }
 
             // Reset Button
@@ -51,8 +56,26 @@ struct SRTConverterResultView: View {
             .controlSize(.large)
         }
         .padding()
+        .alert(String(localized: "Action Failed", comment: "Operation failure alert title"), isPresented: $showOperationError) {
+            Button(String(localized: "OK", comment: "OK button")) { }
+        } message: {
+            Text(operationErrorMessage)
+        }
         #if DEBUG
         .enableInjection()
         #endif
+    }
+
+    private func saveFile(_ path: String) {
+        FileUtility.saveFileWithDialog(filePath: path) { result in
+            if case .failure(let error) = result {
+                presentOperationError(error.localizedDescription)
+            }
+        }
+    }
+
+    private func presentOperationError(_ message: String) {
+        operationErrorMessage = message
+        showOperationError = true
     }
 }

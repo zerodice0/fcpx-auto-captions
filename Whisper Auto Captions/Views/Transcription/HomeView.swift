@@ -139,6 +139,11 @@ struct HomeView: View {
                 secondaryButton: .default(Text(""), action: {})
             )
         }
+        .alert(String(localized: "Download Failed", comment: "Download failure alert title"), isPresented: $viewModel.showDownloadError) {
+            Button(String(localized: "OK", comment: "OK button")) { }
+        } message: {
+            Text(viewModel.downloadErrorMessage)
+        }
         .sheet(isPresented: $viewModel.showSettings) {
             SettingsWindowView()
         }

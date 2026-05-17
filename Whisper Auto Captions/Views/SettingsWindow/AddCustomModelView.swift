@@ -257,7 +257,7 @@ struct AddCustomModelView: View {
         case .url:
             let model = modelManager.addModel(name: trimmedName, url: urlString)
             // Start download immediately
-            modelManager.downloadModel(model) { success in
+            modelManager.downloadModel(model) { success, _ in
                 if !success {
                     // Model was added but download failed - user can retry later
                 }

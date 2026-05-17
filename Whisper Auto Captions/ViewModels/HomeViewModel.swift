@@ -26,6 +26,8 @@ class HomeViewModel: ObservableObject {
     @Published var isDownloading = false
     @Published var downloadProgress: Double = 0.0
     @Published var showAlert = false
+    @Published var showDownloadError = false
+    @Published var downloadErrorMessage = ""
     
     // Processing state
     enum TranscriptionState: Equatable {
@@ -56,6 +58,13 @@ class HomeViewModel: ObservableObject {
     private let transcriptionControlQueue = DispatchQueue(label: "WhisperAutoCaptions.HomeViewModel.transcription")
     private var activeExternalProcess: Process?
     private var cancellationRequested = false
+    private var activeDownloadKind: DownloadKind?
+    private var isCancellingDownload = false
+
+    private enum DownloadKind {
+        case builtIn
+        case custom
+    }
 
     // MARK: - Initialization
     init() {
@@ -248,22 +257,29 @@ class HomeViewModel: ObservableObject {
     // MARK: - Model Download
     func downloadModel(model: String, completion: @escaping (Bool) -> Void) {
         guard let url = URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(model.lowercased()).bin") else {
+            presentDownloadError(String(localized: "The built-in model download URL is invalid.", comment: "Invalid built-in model URL error"))
             completion(false)
             return
         }
+
+        self.activeDownloadKind = .builtIn
+        self.isCancellingDownload = false
+        self.downloadProgress = 0.0
 
         self.downloadDelegate = DownloadDelegate(model: selectedModel, progressHandler: { [weak self] progress in
             DispatchQueue.main.async { self?.downloadProgress = progress }
         }, completionHandler: { [weak self] in
             DispatchQueue.main.async {
-                self?.isDownloading = false
-                self?.showAlert = false
+                self?.finishDownloadUI()
             }
             completion(true)
         }, errorHandler: { [weak self] errorMessage in
             DispatchQueue.main.async {
-                self?.isDownloading = false
-                self?.showAlert = false
+                let wasCancelled = self?.isCancellingDownload == true || errorMessage == "Download cancelled."
+                self?.finishDownloadUI()
+                if !wasCancelled {
+                    self?.presentDownloadError(errorMessage)
+                }
             }
             completion(false)
         })
@@ -282,9 +298,20 @@ class HomeViewModel: ObservableObject {
     }
     
     func cancelDownload() {
-        self.downloadDelegate?.cancelAction?()
-        self.isDownloading = false
-        self.showAlert = false
+        isCancellingDownload = true
+        switch activeDownloadKind {
+        case .custom:
+            customModelManager.cancelDownload()
+        case .builtIn:
+            downloadDelegate?.cancelAction?()
+        case .none:
+            downloadDelegate?.cancelAction?()
+            customModelManager.cancelDownload()
+        }
+        activeDownloadKind = nil
+        isDownloading = false
+        showAlert = false
+        downloadProgress = 0.0
     }
     
     // MARK: - Main Processing
@@ -562,7 +589,10 @@ class HomeViewModel: ObservableObject {
 
         // Handle built-in models
         guard let modelFileName = modelsMapping[selectedModel],
-              let modelPath = try? AppDirectoryUtility.getModelPath(for: modelFileName) else { return }
+              let modelPath = try? AppDirectoryUtility.getModelPath(for: modelFileName) else {
+            presentDownloadError(String(localized: "Could not prepare the selected model path. Choose another model or check app storage permissions.", comment: "Built-in model path error"))
+            return
+        }
 
         startOrDownloadModel(at: modelPath) { [weak self] in
             self?.downloadModel(model: modelFileName) { [weak self] success in
@@ -574,6 +604,7 @@ class HomeViewModel: ObservableObject {
     /// Validate and start transcription for a custom model
     private func validateAndStartCustomModel(_ model: CustomModel) {
         guard let modelPath = try? customModelManager.getCustomModelPath(for: model) else {
+            presentDownloadError(String(localized: "Could not prepare the custom model path. Re-import the model or choose another model.", comment: "Custom model path error"))
             return
         }
 
@@ -608,20 +639,46 @@ class HomeViewModel: ObservableObject {
     private func downloadCustomModel(_ model: CustomModel) {
         guard case .url = model.source else {
             // Local models should already be imported - can't download
+            presentDownloadError(String(localized: "The selected local model file is missing. Re-import the model or choose another model.", comment: "Missing local custom model error"))
             return
         }
 
+        activeDownloadKind = .custom
+        isCancellingDownload = false
         isDownloading = true
         showAlert = true
+        downloadProgress = 0.0
 
-        customModelManager.downloadModel(model) { [weak self] success in
+        customModelManager.downloadModel(
+            model,
+            progressHandler: { [weak self] progress in
+                DispatchQueue.main.async {
+                    self?.downloadProgress = progress
+                }
+            }
+        ) { [weak self] success, errorMessage in
             DispatchQueue.main.async {
-                self?.isDownloading = false
-                self?.showAlert = false
+                let wasCancelled = self?.isCancellingDownload == true || errorMessage == "Download cancelled."
+                self?.finishDownloadUI()
                 if success {
                     self?.startTranscription()
+                } else if !wasCancelled {
+                    self?.presentDownloadError(errorMessage ?? String(localized: "Failed to download the custom model.", comment: "Custom model download failed fallback error"))
                 }
             }
         }
+    }
+
+    private func finishDownloadUI() {
+        isDownloading = false
+        showAlert = false
+        downloadProgress = 0.0
+        activeDownloadKind = nil
+        isCancellingDownload = false
+    }
+
+    private func presentDownloadError(_ message: String) {
+        downloadErrorMessage = message
+        showDownloadError = true
     }
 }

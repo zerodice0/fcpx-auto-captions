@@ -17,6 +17,22 @@ private extension XMLElement {
 // MARK: - FCPXML Service
 /// Service for converting SRT files to FCPXML format for Final Cut Pro
 struct FCPXMLService {
+    enum FinalCutOpenError: LocalizedError {
+        case fileUnavailable
+        case scriptUnavailable
+        case scriptFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .fileUnavailable:
+                return String(localized: "The FCPXML file could not be found or is not readable.", comment: "FCPXML file unavailable error")
+            case .scriptUnavailable:
+                return String(localized: "Could not create the Final Cut Pro launch script.", comment: "AppleScript creation error")
+            case .scriptFailed(let message):
+                return String(localized: "Final Cut Pro could not open the file: \(message)", comment: "Final Cut Pro open failed error")
+            }
+        }
+    }
 
     // MARK: - Time Conversion
     static func srtTimeToFrame(srtTime: String, fps: Float) -> Int {
@@ -322,12 +338,16 @@ struct FCPXMLService {
 
     /// Opens an FCPXML file in Final Cut Pro using AppleScript
     /// - Parameter fcpxmlPath: The file path to the FCPXML file
-    static func openInFinalCutPro(fcpxmlPath: String) {
+    static func openInFinalCutPro(
+        fcpxmlPath: String,
+        completion: ((Result<Void, Error>) -> Void)? = nil
+    ) {
         let fileManager = FileManager.default
         let fcpxmlURL = URL(fileURLWithPath: fcpxmlPath)
         guard !fcpxmlPath.isEmpty,
               fileManager.fileExists(atPath: fcpxmlURL.path),
               (try? fcpxmlURL.resourceValues(forKeys: [.isReadableKey]).isReadable) == true else {
+            completeOnMain(.failure(FinalCutOpenError.fileUnavailable), completion: completion)
             return
         }
 
@@ -343,9 +363,30 @@ struct FCPXMLService {
         """
         DispatchQueue.global(qos: .background).async {
             var error: NSDictionary?
-            if let scriptObject = NSAppleScript(source: command) {
-                _ = scriptObject.executeAndReturnError(&error)
+            guard let scriptObject = NSAppleScript(source: command) else {
+                completeOnMain(.failure(FinalCutOpenError.scriptUnavailable), completion: completion)
+                return
             }
+
+            _ = scriptObject.executeAndReturnError(&error)
+            if let error {
+                let message = error["NSAppleScriptErrorMessage"] as? String
+                    ?? String(localized: "Unknown AppleScript error.", comment: "Unknown AppleScript error fallback")
+                completeOnMain(.failure(FinalCutOpenError.scriptFailed(message)), completion: completion)
+            } else {
+                completeOnMain(.success(()), completion: completion)
+            }
+        }
+    }
+
+    private static func completeOnMain<T>(
+        _ result: Result<T, Error>,
+        completion: ((Result<T, Error>) -> Void)?
+    ) {
+        guard let completion else { return }
+
+        DispatchQueue.main.async {
+            completion(result)
         }
     }
 

@@ -47,6 +47,23 @@ struct CustomModelManagementView: View {
         } message: { model in
             Text(String(localized: "Are you sure you want to delete \"\(model.name)\"? This will also remove the downloaded model file.", comment: "Delete model confirmation message"))
         }
+        .alert(
+            String(localized: "Download Failed", comment: "Download failure alert title"),
+            isPresented: Binding(
+                get: { modelManager.downloadErrorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        modelManager.downloadErrorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(String(localized: "OK", comment: "OK button")) {
+                modelManager.downloadErrorMessage = nil
+            }
+        } message: {
+            Text(modelManager.downloadErrorMessage ?? "")
+        }
     }
 
     // MARK: - Header Section
@@ -111,7 +128,7 @@ struct CustomModelManagementView: View {
                         isDownloading: modelManager.currentDownloadingModel?.id == model.id,
                         downloadProgress: modelManager.currentDownloadingModel?.id == model.id ? modelManager.downloadProgress : 0,
                         onDownload: {
-                            modelManager.downloadModel(model) { _ in }
+                            modelManager.downloadModel(model) { _, _ in }
                         },
                         onDelete: {
                             modelToDelete = model

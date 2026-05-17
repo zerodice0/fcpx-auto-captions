@@ -19,11 +19,13 @@ class CustomModelManager: ObservableObject {
     @Published var downloadProgress: Double = 0.0
     @Published var isDownloading: Bool = false
     @Published var currentDownloadingModel: CustomModel?
+    @Published var downloadErrorMessage: String?
 
     // MARK: - Private Properties
 
     private var downloadTask: URLSessionDownloadTask?
     private var downloadDelegate: DownloadDelegate?
+    private var isCancellingDownload = false
 
     // MARK: - Initialization
 
@@ -147,10 +149,16 @@ class CustomModelManager: ObservableObject {
     /// - Parameters:
     ///   - model: The model to download
     ///   - completion: Called with success/failure when complete
-    func downloadModel(_ model: CustomModel, completion: @escaping (Bool) -> Void) {
+    func downloadModel(
+        _ model: CustomModel,
+        progressHandler: ((Double) -> Void)? = nil,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
         guard case .url(let urlString) = model.source,
               let url = URL(string: urlString) else {
-            completion(false)
+            let message = String(localized: "The model download URL is invalid.", comment: "Invalid custom model URL error")
+            downloadErrorMessage = message
+            completion(false, message)
             return
         }
 
@@ -158,13 +166,17 @@ class CustomModelManager: ObservableObject {
         do {
             try AppDirectoryUtility.ensureDirectoryExists()
         } catch {
-            completion(false)
+            let message = String(localized: "Failed to prepare the model storage folder: \(error.localizedDescription)", comment: "Custom model storage error")
+            downloadErrorMessage = message
+            completion(false, message)
             return
         }
 
         currentDownloadingModel = model
         isDownloading = true
         downloadProgress = 0.0
+        downloadErrorMessage = nil
+        isCancellingDownload = false
 
         // Create download delegate
         downloadDelegate = DownloadDelegate(
@@ -172,18 +184,24 @@ class CustomModelManager: ObservableObject {
             progressHandler: { [weak self] progress in
                 DispatchQueue.main.async {
                     self?.downloadProgress = progress
+                    progressHandler?(progress)
                 }
             },
             completionHandler: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.handleDownloadComplete(model: model, success: true)
-                    completion(true)
+                    self?.handleDownloadComplete(model: model, success: true, errorMessage: nil)
+                    completion(true, nil)
                 }
             },
-            errorHandler: { [weak self] _ in
+            errorHandler: { [weak self] errorMessage in
                 DispatchQueue.main.async {
-                    self?.handleDownloadComplete(model: model, success: false)
-                    completion(false)
+                    let wasCancelled = self?.isCancellingDownload == true || errorMessage == "Download cancelled."
+                    self?.handleDownloadComplete(
+                        model: model,
+                        success: false,
+                        errorMessage: wasCancelled ? nil : errorMessage
+                    )
+                    completion(false, wasCancelled ? nil : errorMessage)
                 }
             }
         )
@@ -207,6 +225,7 @@ class CustomModelManager: ObservableObject {
 
     /// Cancel the current download
     func cancelDownload() {
+        isCancellingDownload = true
         downloadDelegate?.cancelAction?()
         isDownloading = false
         downloadProgress = 0.0
@@ -221,10 +240,12 @@ class CustomModelManager: ObservableObject {
         return size
     }
 
-    private func handleDownloadComplete(model: CustomModel, success: Bool) {
+    private func handleDownloadComplete(model: CustomModel, success: Bool, errorMessage: String?) {
         isDownloading = false
         downloadProgress = 0.0
         currentDownloadingModel = nil
+        downloadErrorMessage = success ? nil : errorMessage
+        isCancellingDownload = false
 
         if success {
             // Update model status
