@@ -5,16 +5,7 @@ import SwiftUI
 class SRTConverterViewModel: ObservableObject {
     // MARK: - Dependencies
     private let settingsManager = SettingsManager.shared
-    private let defaults = UserDefaults.standard
     private var isInitializing = true
-
-    private enum ConverterStorageKeys {
-        static let selectedResolution = "srtConverterSelectedResolution"
-        static let customWidth = "srtConverterCustomWidth"
-        static let customHeight = "srtConverterCustomHeight"
-        static let selectedFrameRate = "srtConverterSelectedFrameRate"
-        static let customFps = "srtConverterCustomFps"
-    }
 
     // MARK: - Published Properties
     @Published var srtFileURL: URL?
@@ -86,32 +77,36 @@ class SRTConverterViewModel: ObservableObject {
     }
 
     private func loadConverterSettings() {
-        if let resolutionRaw = defaults.string(forKey: ConverterStorageKeys.selectedResolution),
-           let resolution = VideoResolution(rawValue: resolutionRaw) {
+        let converterSettings = settingsManager.srtConverterSettings
+
+        if let resolution = VideoResolution(rawValue: converterSettings.selectedResolution) {
             selectedResolution = resolution
         }
 
-        customWidth = defaults.string(forKey: ConverterStorageKeys.customWidth) ?? customWidth
-        customHeight = defaults.string(forKey: ConverterStorageKeys.customHeight) ?? customHeight
+        customWidth = converterSettings.customWidth
+        customHeight = converterSettings.customHeight
 
-        if let frameRateRaw = defaults.string(forKey: ConverterStorageKeys.selectedFrameRate),
-           let frameRate = FrameRate(rawValue: frameRateRaw) {
+        if let frameRate = FrameRate(rawValue: converterSettings.selectedFrameRate) {
             selectedFrameRate = frameRate
         } else if let savedFrameRate = FrameRate(rawValue: settingsManager.settings.selectedFrameRate) {
             selectedFrameRate = savedFrameRate
         }
 
-        customFps = defaults.string(forKey: ConverterStorageKeys.customFps) ?? settingsManager.settings.customFps
+        customFps = converterSettings.customFps.isEmpty
+            ? settingsManager.settings.customFps
+            : converterSettings.customFps
     }
 
     private func saveConverterSettings() {
         guard !isInitializing else { return }
 
-        defaults.set(selectedResolution.rawValue, forKey: ConverterStorageKeys.selectedResolution)
-        defaults.set(customWidth, forKey: ConverterStorageKeys.customWidth)
-        defaults.set(customHeight, forKey: ConverterStorageKeys.customHeight)
-        defaults.set(selectedFrameRate.rawValue, forKey: ConverterStorageKeys.selectedFrameRate)
-        defaults.set(customFps, forKey: ConverterStorageKeys.customFps)
+        settingsManager.srtConverterSettings = SRTConverterSettings(
+            selectedResolution: selectedResolution.rawValue,
+            customWidth: customWidth,
+            customHeight: customHeight,
+            selectedFrameRate: selectedFrameRate.rawValue,
+            customFps: customFps
+        )
     }
 
     /// Load system fonts asynchronously

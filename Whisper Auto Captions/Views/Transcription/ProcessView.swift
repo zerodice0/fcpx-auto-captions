@@ -161,8 +161,8 @@ struct ProcessView: View {
     
     // MARK: - Computed Properties
     private var batchDisplayText: String {
-        let current = viewModel.currentBatch == -100000 ? "···" : String(viewModel.currentBatch)
-        let total = viewModel.totalBatch == 100000 ? "···" : String(viewModel.totalBatch)
+        let current = viewModel.currentBatch.map(String.init) ?? "···"
+        let total = viewModel.totalBatch.map(String.init) ?? "···"
         return "\(current) / \(total)"
     }
 

@@ -123,21 +123,28 @@ struct HomeView: View {
             .padding()
 
             if viewModel.isDownloading {
-                ProgressView(value: viewModel.downloadProgress)
-                    .padding()
-                    .progressViewStyle(LinearProgressViewStyle())
-                    .frame(width: 200)
+                VStack(spacing: 8) {
+                    HStack {
+                        Text(String(localized: "Downloading \(viewModel.selectedModel) Model", comment: "Model download status"))
+                            .font(.subheadline)
+                        Spacer()
+                        Text(String(format: "%.0f%%", viewModel.downloadProgress * 100))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    ProgressView(value: viewModel.downloadProgress)
+                        .progressViewStyle(LinearProgressViewStyle())
+
+                    Button(String(localized: "Cancel", comment: "Cancel download button")) {
+                        viewModel.cancelDownload()
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.red)
+                }
+                .frame(width: 280)
+                .padding()
             }
-        }
-        .alert(isPresented: $viewModel.showAlert) {
-            Alert(
-                title: Text("Downloading \(viewModel.selectedModel) Model"),
-                message: Text(String(format: "Progress: %.0f%%", viewModel.downloadProgress * 100)),
-                primaryButton: .destructive(Text("Cancel"), action: {
-                    viewModel.cancelDownload()
-                }),
-                secondaryButton: .default(Text(""), action: {})
-            )
         }
         .alert(String(localized: "Download Failed", comment: "Download failure alert title"), isPresented: $viewModel.showDownloadError) {
             Button(String(localized: "OK", comment: "OK button")) { }
@@ -153,6 +160,9 @@ struct HomeView: View {
             }
         } message: {
             Text(invalidFileErrorMessage)
+        }
+        .onReceive(customModelManager.$customModels) { _ in
+            viewModel.reconcileSelectedModelWithAvailableModels()
         }
     }
     

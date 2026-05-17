@@ -25,7 +25,6 @@ class HomeViewModel: ObservableObject {
     // Download state
     @Published var isDownloading = false
     @Published var downloadProgress: Double = 0.0
-    @Published var showAlert = false
     @Published var showDownloadError = false
     @Published var downloadErrorMessage = ""
     
@@ -41,8 +40,8 @@ class HomeViewModel: ObservableObject {
     @Published var startCreatingAutoCaptions = false
     @Published var progress = 0.0
     @Published var progressPercentage = 0
-    @Published var totalBatch = 100000
-    @Published var currentBatch = -100000
+    @Published var totalBatch: Int?
+    @Published var currentBatch: Int?
     @Published var remainingTime = "00:00"
     @Published var status = "Splitting audio file..."
     @Published var outputCaptions = ""
@@ -82,6 +81,7 @@ class HomeViewModel: ObservableObject {
 
         // Mark initialization complete
         isInitializing = false
+        reconcileSelectedModelWithAvailableModels()
     }
 
     // MARK: - Settings Persistence
@@ -158,7 +158,7 @@ class HomeViewModel: ObservableObject {
     }
 
     var canStartTranscription: Bool {
-        return fileURL != nil && isFpsValid && !SettingsManager.shared.settings.noTimestamps
+        return fileURL != nil && isFpsValid && isSelectedModelAvailable && !SettingsManager.shared.settings.noTimestamps
     }
 
     var transcriptionBlockReason: String? {
@@ -171,7 +171,23 @@ class HomeViewModel: ObservableObject {
         if SettingsManager.shared.settings.noTimestamps {
             return String(localized: "Disable Timestamps must be turned off to create SRT and FCPXML captions.", comment: "No timestamps transcription warning")
         }
+        if !isSelectedModelAvailable {
+            return String(localized: "The selected model is no longer available. Choose another model.", comment: "Unavailable selected model transcription warning")
+        }
         return nil
+    }
+
+    var isSelectedModelAvailable: Bool {
+        isModelAvailable(selectedModel)
+    }
+
+    func reconcileSelectedModelWithAvailableModels() {
+        guard !isModelAvailable(selectedModel) else { return }
+        selectedModel = ModelData.models.contains("Medium") ? "Medium" : ModelData.models[0]
+    }
+
+    private func isModelAvailable(_ model: String) -> Bool {
+        modelsMapping[model] != nil || customModelManager.findModel(byName: model) != nil
     }
 
     private var hasCancellationRequest: Bool {
@@ -293,7 +309,6 @@ class HomeViewModel: ObservableObject {
         let task = session.downloadTask(with: url)
         self.downloadTask = task
         self.isDownloading = true
-        self.showAlert = true
         task.resume()
     }
     
@@ -310,7 +325,6 @@ class HomeViewModel: ObservableObject {
         }
         activeDownloadKind = nil
         isDownloading = false
-        showAlert = false
         downloadProgress = 0.0
     }
     
@@ -333,9 +347,9 @@ class HomeViewModel: ObservableObject {
         let projectName = self.projectName
         let fps = self.currentFps
         let language = self.selectedLanguage
-        self.totalBatch = 100000
+        self.totalBatch = nil
         self.status = String(localized: "Preparing audio...", comment: "Preparing audio status")
-        self.currentBatch = -100000
+        self.currentBatch = nil
         self.progress = 0.0
         self.progressPercentage = 0
         self.remainingTime = "00:00"
@@ -563,8 +577,8 @@ class HomeViewModel: ObservableObject {
         processingState = .idle
         outputSRTFilePath = ""
         outputFCPXMLFilePath = ""
-        totalBatch = 100000
-        currentBatch = -100000
+        totalBatch = nil
+        currentBatch = nil
         status = "Splitting audio file..."
     }
     
@@ -646,7 +660,6 @@ class HomeViewModel: ObservableObject {
         activeDownloadKind = .custom
         isCancellingDownload = false
         isDownloading = true
-        showAlert = true
         downloadProgress = 0.0
 
         customModelManager.downloadModel(
@@ -671,7 +684,6 @@ class HomeViewModel: ObservableObject {
 
     private func finishDownloadUI() {
         isDownloading = false
-        showAlert = false
         downloadProgress = 0.0
         activeDownloadKind = nil
         isCancellingDownload = false

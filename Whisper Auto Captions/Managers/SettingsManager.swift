@@ -8,6 +8,14 @@
 import Foundation
 import SwiftUI
 
+struct SRTConverterSettings: Codable, Equatable {
+    var selectedResolution: String = VideoResolution.fullHD1080p.rawValue
+    var customWidth: String = "1920"
+    var customHeight: String = "1080"
+    var selectedFrameRate: String = FrameRate.fps30.rawValue
+    var customFps: String = "30"
+}
+
 /// Manages WhisperSettings persistence using AppStorage
 class SettingsManager: ObservableObject {
     // MARK: - Singleton
@@ -38,11 +46,18 @@ class SettingsManager: ObservableObject {
         }
     }
 
+    @Published var srtConverterSettings: SRTConverterSettings {
+        didSet {
+            saveSRTConverterSettings()
+        }
+    }
+
     // MARK: - Storage Keys
     private enum StorageKeys {
         static let settings = "whisperSettings"
         static let preset = "whisperPreset"
         static let titleStyle = "titleStyleSettings"
+        static let srtConverter = "srtConverterSettings"
     }
 
     // MARK: - UserDefaults
@@ -71,6 +86,13 @@ class SettingsManager: ObservableObject {
             self.titleStyleSettings = TitleStyleSettings.default
         }
 
+        if let data = defaults.data(forKey: StorageKeys.srtConverter),
+           let decoded = try? JSONDecoder().decode(SRTConverterSettings.self, from: data) {
+            self.srtConverterSettings = decoded
+        } else {
+            self.srtConverterSettings = SRTConverterSettings()
+        }
+
         // Load preset from UserDefaults (after all stored properties are initialized)
         if let presetRaw = defaults.string(forKey: StorageKeys.preset),
            let preset = WhisperPreset(rawValue: presetRaw) {
@@ -91,6 +113,12 @@ class SettingsManager: ObservableObject {
     private func saveTitleStyleSettings() {
         if let encoded = try? JSONEncoder().encode(titleStyleSettings) {
             defaults.set(encoded, forKey: StorageKeys.titleStyle)
+        }
+    }
+
+    private func saveSRTConverterSettings() {
+        if let encoded = try? JSONEncoder().encode(srtConverterSettings) {
+            defaults.set(encoded, forKey: StorageKeys.srtConverter)
         }
     }
 

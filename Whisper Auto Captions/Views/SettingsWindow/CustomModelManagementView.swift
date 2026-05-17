@@ -126,6 +126,7 @@ struct CustomModelManagementView: View {
                     CustomModelRow(
                         model: model,
                         isDownloading: modelManager.currentDownloadingModel?.id == model.id,
+                        isActionDisabled: modelManager.isDownloading,
                         downloadProgress: modelManager.currentDownloadingModel?.id == model.id ? modelManager.downloadProgress : 0,
                         onDownload: {
                             modelManager.downloadModel(model) { _, _ in }
@@ -176,6 +177,7 @@ struct CustomModelManagementView: View {
 struct CustomModelRow: View {
     let model: CustomModel
     let isDownloading: Bool
+    let isActionDisabled: Bool
     let downloadProgress: Double
     let onDownload: () -> Void
     let onDelete: () -> Void
@@ -233,6 +235,7 @@ struct CustomModelRow: View {
                             .font(.title3)
                     }
                     .buttonStyle(.borderless)
+                    .disabled(isActionDisabled)
                     .help(String(localized: "Download model", comment: "Download model button tooltip"))
                 }
 
@@ -242,6 +245,7 @@ struct CustomModelRow: View {
                         .foregroundColor(.red)
                 }
                 .buttonStyle(.borderless)
+                .disabled(isActionDisabled)
                 .help(String(localized: "Delete model", comment: "Delete model button tooltip"))
             }
         }
