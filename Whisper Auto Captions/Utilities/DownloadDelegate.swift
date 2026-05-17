@@ -15,6 +15,8 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     var completionHandler: (() -> Void)?
     var errorHandler: ((String) -> Void)?
     var cancelAction: (() -> Void)?
+    private var didNotifyCompletion = false
+    private let completionLock = NSLock()
 
     // Minimum valid model file size (50MB) - smallest model is ~75MB
     private let minimumValidFileSize: Int64 = 50 * 1024 * 1024
@@ -47,26 +49,20 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
                 }
                 print("Download validation failed: \(errorMessage)")
                 try? fileManager.removeItem(at: location)
-                DispatchQueue.main.async {
-                    self.errorHandler?(errorMessage)
-                }
+                notifyFailure(errorMessage)
                 return
             }
         } catch {
             print("Failed to validate downloaded file: \(error)")
             try? fileManager.removeItem(at: location)
-            DispatchQueue.main.async {
-                self.errorHandler?("Failed to validate downloaded file: \(error.localizedDescription)")
-            }
+            notifyFailure("Failed to validate downloaded file: \(error.localizedDescription)")
             return
         }
 
         // Get destination path using AppDirectoryUtility
         guard let destinationURL = try? AppDirectoryUtility.getModelPath(for: model) else {
             try? fileManager.removeItem(at: location)
-            DispatchQueue.main.async {
-                self.errorHandler?("Failed to get model destination path")
-            }
+            notifyFailure("Failed to get model destination path")
             return
         }
 
@@ -81,15 +77,11 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
             }
             try fileManager.moveItem(at: location, to: destinationURL)
             print("File downloaded and moved to: \(destinationURL.path)")
-            DispatchQueue.main.async {
-                self.completionHandler?()
-            }
+            notifySuccess()
         } catch {
             try? fileManager.removeItem(at: location)
             print("Failed to move downloaded file: \(error)")
-            DispatchQueue.main.async {
-                self.errorHandler?("Failed to save downloaded file: \(error.localizedDescription)")
-            }
+            notifyFailure("Failed to save downloaded file: \(error.localizedDescription)")
         }
     }
 
@@ -110,6 +102,42 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("Download failed with error: \(error.localizedDescription)")
+            notifyFailure(message(for: error))
         }
+    }
+
+    // MARK: - Completion Handling
+
+    private func notifySuccess() {
+        guard markCompletionNotified() else { return }
+
+        DispatchQueue.main.async {
+            self.completionHandler?()
+        }
+    }
+
+    private func notifyFailure(_ message: String) {
+        guard markCompletionNotified() else { return }
+
+        DispatchQueue.main.async {
+            self.errorHandler?(message)
+        }
+    }
+
+    private func markCompletionNotified() -> Bool {
+        completionLock.lock()
+        defer { completionLock.unlock() }
+
+        guard !didNotifyCompletion else { return false }
+        didNotifyCompletion = true
+        return true
+    }
+
+    private func message(for error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+            return "Download cancelled."
+        }
+        return "Download failed: \(error.localizedDescription)"
     }
 }

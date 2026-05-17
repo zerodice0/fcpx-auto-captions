@@ -63,6 +63,13 @@ class DownloadService: NSObject, ObservableObject {
                     self?.isDownloading = false
                     self?.completionHandler?(true)
                 }
+            },
+            errorHandler: { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.isDownloading = false
+                    self?.downloadProgress = 0.0
+                    self?.completionHandler?(false)
+                }
             }
         )
 
@@ -95,7 +102,6 @@ class DownloadService: NSObject, ObservableObject {
             self.isDownloading = false
             self.downloadProgress = 0.0
         }
-        completionHandler?(false)
     }
 
     // MARK: - Check Model Exists
