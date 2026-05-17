@@ -41,30 +41,34 @@ struct HomeView: View {
                 // Model Selection
                 GridRow {
                     Text(String(localized: "Model:", comment: "Model label"))
-                    Picker(selection: $viewModel.selectedModel, label: EmptyView()) {
-                        // Built-in models
-                        ForEach(viewModel.models, id: \.self) { model in
-                            Text(model).tag(model)
-                        }
+                    HStack(spacing: 8) {
+                        Picker(selection: $viewModel.selectedModel, label: EmptyView()) {
+                            // Built-in models
+                            ForEach(viewModel.models, id: \.self) { model in
+                                Text(model).tag(model)
+                            }
 
-                        // Custom models (if any)
-                        if !customModelManager.customModels.isEmpty {
-                            Divider()
+                            // Custom models (if any)
+                            if !customModelManager.customModels.isEmpty {
+                                Divider()
 
-                            ForEach(customModelManager.customModels) { customModel in
-                                HStack {
-                                    Text(customModel.name)
-                                    if !customModel.isDownloaded {
-                                        Image(systemName: "arrow.down.circle")
-                                            .font(.caption)
+                                ForEach(customModelManager.customModels) { customModel in
+                                    HStack {
+                                        Text(customModel.name)
+                                        if !customModel.isDownloaded {
+                                            Image(systemName: "arrow.down.circle")
+                                                .font(.caption)
+                                        }
                                     }
+                                    .tag(customModel.name)
                                 }
-                                .tag(customModel.name)
                             }
                         }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: 300, alignment: .leading)
+
+                        selectedModelDownloadControl
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(maxWidth: 300, alignment: .leading)
                 }
 
                 // Language Selection
@@ -108,7 +112,7 @@ struct HomeView: View {
                             Text(String(localized: "Create", comment: "Create button"))
                         }
                         .buttonStyle(BorderedProminentButtonStyle())
-                        .disabled(!viewModel.canStartTranscription || modelDownloadManager.isDownloading)
+                        .disabled(!viewModel.canStartTranscription || viewModel.isSelectedModelStartPending)
 
                         if let reason = viewModel.transcriptionBlockReason {
                             Text(reason)
@@ -123,25 +127,34 @@ struct HomeView: View {
             }
             .padding()
 
-            if modelDownloadManager.isDownloading {
+            if modelDownloadManager.hasPendingDownloads {
                 VStack(spacing: 8) {
-                    HStack {
-                        Text(String(localized: "Downloading \(modelDownloadManager.currentDisplayName ?? viewModel.selectedModel) Model", comment: "Model download status"))
-                            .font(.subheadline)
-                        Spacer()
-                        Text(String(format: "%.0f%%", modelDownloadManager.progress * 100))
-                            .font(.subheadline)
+                    if modelDownloadManager.isDownloading {
+                        HStack {
+                            Text(String(localized: "Downloading \(modelDownloadManager.currentDisplayName ?? viewModel.selectedModel) Model", comment: "Model download status"))
+                                .font(.subheadline)
+                            Spacer()
+                            Text(String(format: "%.0f%%", modelDownloadManager.progress * 100))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+
+                        ProgressView(value: modelDownloadManager.progress)
+                            .progressViewStyle(LinearProgressViewStyle())
+                    }
+
+                    if modelDownloadManager.queuedCount > 0 {
+                        Text(String(localized: "Queued downloads: \(modelDownloadManager.queuedCount)", comment: "Queued model download count"))
+                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
 
-                    ProgressView(value: modelDownloadManager.progress)
-                        .progressViewStyle(LinearProgressViewStyle())
-
-                    Button(String(localized: "Cancel", comment: "Cancel download button")) {
+                    Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
                         modelDownloadManager.cancelDownload()
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.red)
+                    .disabled(!modelDownloadManager.isDownloading)
                 }
                 .frame(width: 280)
                 .padding()
@@ -176,6 +189,27 @@ struct HomeView: View {
         }
         .onReceive(customModelManager.$customModels) { _ in
             viewModel.reconcileSelectedModelWithAvailableModels()
+        }
+    }
+
+    @ViewBuilder
+    private var selectedModelDownloadControl: some View {
+        if viewModel.isSelectedModelDownloading {
+            ProgressView(value: modelDownloadManager.progress)
+                .progressViewStyle(.circular)
+                .scaleEffect(0.65)
+                .frame(width: 24, height: 24)
+                .help(String(localized: "Downloading selected model", comment: "Selected model downloading tooltip"))
+        } else if viewModel.isSelectedModelQueued {
+            Image(systemName: "clock")
+                .foregroundColor(.secondary)
+                .help(String(localized: "Selected model is queued for download", comment: "Selected model queued tooltip"))
+        } else if viewModel.canDownloadSelectedModel {
+            Button(action: viewModel.downloadSelectedModel) {
+                Image(systemName: "arrow.down.circle")
+            }
+            .buttonStyle(.borderless)
+            .help(String(localized: "Download selected model", comment: "Download selected model tooltip"))
         }
     }
     

@@ -50,6 +50,7 @@ class HomeViewModel: ObservableObject {
     private var activeExternalProcess: Process?
     private var cancellationRequested = false
     private let modelDownloadManager = ModelDownloadManager.shared
+    @Published private var pendingStartDownloadTargetIDs: Set<String> = []
 
     // MARK: - Initialization
     init() {
@@ -167,6 +168,35 @@ class HomeViewModel: ObservableObject {
         isModelAvailable(selectedModel)
     }
 
+    var canDownloadSelectedModel: Bool {
+        guard let targetID = selectedModelDownloadTargetID,
+              !modelDownloadManager.isActiveOrQueued(targetID),
+              let modelPath = getSelectedModelPath() else {
+            return false
+        }
+
+        if let customModel = customModelManager.findModel(byName: selectedModel) {
+            guard customModel.source.isURL else { return false }
+        }
+
+        return !isValidModelFile(at: modelPath)
+    }
+
+    var isSelectedModelDownloading: Bool {
+        guard let targetID = selectedModelDownloadTargetID else { return false }
+        return modelDownloadManager.currentTargetID == targetID
+    }
+
+    var isSelectedModelQueued: Bool {
+        guard let targetID = selectedModelDownloadTargetID else { return false }
+        return modelDownloadManager.isQueued(targetID)
+    }
+
+    var isSelectedModelStartPending: Bool {
+        guard let targetID = selectedModelDownloadTargetID else { return false }
+        return pendingStartDownloadTargetIDs.contains(targetID) && modelDownloadManager.isActiveOrQueued(targetID)
+    }
+
     func reconcileSelectedModelWithAvailableModels() {
         guard !isModelAvailable(selectedModel) else { return }
         selectedModel = ModelData.models.contains("Medium") ? "Medium" : ModelData.models[0]
@@ -257,22 +287,51 @@ class HomeViewModel: ObservableObject {
     }
     
     // MARK: - Model Download
-    func downloadModel(model: String, completion: @escaping (Bool) -> Void) {
-        guard let url = URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(model.lowercased()).bin") else {
+    func downloadSelectedModel() {
+        if let customModel = customModelManager.findModel(byName: selectedModel) {
+            queueCustomModelDownload(customModel, startsTranscriptionAfterDownload: false)
+            return
+        }
+
+        guard let modelFileName = modelsMapping[selectedModel] else { return }
+        queueBuiltInModelDownload(
+            fileName: modelFileName,
+            displayName: selectedModel,
+            startsTranscriptionAfterDownload: false
+        )
+    }
+
+    private func queueBuiltInModelDownload(
+        fileName: String,
+        displayName: String,
+        startsTranscriptionAfterDownload: Bool
+    ) {
+        guard let url = URL(string: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(fileName.lowercased()).bin") else {
             modelDownloadManager.errorMessage = String(localized: "The built-in model download URL is invalid.", comment: "Invalid built-in model URL error")
-            completion(false)
             return
         }
 
         let target = ModelDownloadTarget(
-            id: "built-in:\(model)",
-            displayName: selectedModel,
-            fileName: model,
+            id: builtInDownloadTargetID(for: fileName),
+            displayName: displayName,
+            fileName: fileName,
             url: url
         )
 
-        modelDownloadManager.download(target: target) { success, _ in
-            completion(success)
+        if startsTranscriptionAfterDownload {
+            pendingStartDownloadTargetIDs.insert(target.id)
+        }
+
+        modelDownloadManager.download(target: target) { [weak self] success, _ in
+            DispatchQueue.main.async {
+                if startsTranscriptionAfterDownload {
+                    self?.pendingStartDownloadTargetIDs.remove(target.id)
+                }
+
+                guard success, startsTranscriptionAfterDownload else { return }
+                guard self?.selectedModel == displayName else { return }
+                self?.startTranscription()
+            }
         }
     }
     
@@ -544,10 +603,7 @@ class HomeViewModel: ObservableObject {
             return
         }
 
-        // Ensure app directory exists
         try? AppDirectoryUtility.ensureDirectoryExists()
-
-        guard !modelDownloadManager.isDownloading else { return }
 
         // Handle custom models
         if let customModel = customModelManager.findModel(byName: selectedModel) {
@@ -562,10 +618,13 @@ class HomeViewModel: ObservableObject {
             return
         }
 
+        let displayName = selectedModel
         startOrDownloadModel(at: modelPath) { [weak self] in
-            self?.downloadModel(model: modelFileName) { [weak self] success in
-                if success { self?.startTranscription() }
-            }
+            self?.queueBuiltInModelDownload(
+                fileName: modelFileName,
+                displayName: displayName,
+                startsTranscriptionAfterDownload: true
+            )
         }
     }
 
@@ -577,7 +636,7 @@ class HomeViewModel: ObservableObject {
         }
 
         startOrDownloadModel(at: modelPath) { [weak self] in
-            self?.downloadCustomModel(model)
+            self?.queueCustomModelDownload(model, startsTranscriptionAfterDownload: true)
         }
     }
 
@@ -603,19 +662,41 @@ class HomeViewModel: ObservableObject {
         return size >= minimumValidModelSize
     }
 
-    /// Download a custom model and start transcription when complete
-    private func downloadCustomModel(_ model: CustomModel) {
+    private var selectedModelDownloadTargetID: String? {
+        if let customModel = customModelManager.findModel(byName: selectedModel) {
+            return customModel.id.uuidString
+        }
+
+        guard let modelFileName = modelsMapping[selectedModel] else { return nil }
+        return builtInDownloadTargetID(for: modelFileName)
+    }
+
+    private func builtInDownloadTargetID(for fileName: String) -> String {
+        return "built-in:\(fileName)"
+    }
+
+    /// Download a custom model and optionally start transcription when complete.
+    private func queueCustomModelDownload(_ model: CustomModel, startsTranscriptionAfterDownload: Bool) {
         guard case .url = model.source else {
             // Local models should already be imported - can't download
             modelDownloadManager.errorMessage = String(localized: "The selected local model file is missing. Re-import the model or choose another model.", comment: "Missing local custom model error")
             return
         }
 
+        let targetID = model.id.uuidString
+        if startsTranscriptionAfterDownload {
+            pendingStartDownloadTargetIDs.insert(targetID)
+        }
+
         customModelManager.downloadModel(model) { [weak self] success, _ in
             DispatchQueue.main.async {
-                if success {
-                    self?.startTranscription()
+                if startsTranscriptionAfterDownload {
+                    self?.pendingStartDownloadTargetIDs.remove(targetID)
                 }
+
+                guard success, startsTranscriptionAfterDownload else { return }
+                guard self?.selectedModel == model.name else { return }
+                self?.startTranscription()
             }
         }
     }

@@ -156,32 +156,88 @@ final class ModelDownloadManager: ObservableObject {
     @Published private(set) var progress: Double = 0.0
     @Published private(set) var currentTargetID: String?
     @Published private(set) var currentDisplayName: String?
+    @Published private(set) var queuedTargetIDs: Set<String> = []
+    @Published private(set) var queuedDisplayNames: [String] = []
     @Published var errorMessage: String?
+
+    private struct QueuedDownload {
+        let target: ModelDownloadTarget
+        var completions: [(Bool, String?) -> Void]
+    }
 
     private var downloadTask: URLSessionDownloadTask?
     private var downloadDelegate: DownloadDelegate?
+    private var currentDownload: QueuedDownload?
+    private var downloadQueue: [QueuedDownload] = []
     private var activeDownloadID: UUID?
     private var isCancellingDownload = false
 
     private init() {}
 
+    var hasPendingDownloads: Bool {
+        return isDownloading || !downloadQueue.isEmpty
+    }
+
+    var queuedCount: Int {
+        return downloadQueue.count
+    }
+
+    func isQueued(_ targetID: String) -> Bool {
+        return queuedTargetIDs.contains(targetID)
+    }
+
+    func isActiveOrQueued(_ targetID: String) -> Bool {
+        return currentTargetID == targetID || queuedTargetIDs.contains(targetID)
+    }
+
     func download(
         target: ModelDownloadTarget,
         completion: @escaping (Bool, String?) -> Void
     ) {
-        guard !isDownloading else {
-            let message = String(localized: "Another model download is already in progress.", comment: "Concurrent model download error")
-            errorMessage = message
-            completion(false, message)
+        if currentTargetID == target.id {
+            currentDownload?.completions.append(completion)
             return
         }
+
+        if let queuedIndex = downloadQueue.firstIndex(where: { $0.target.id == target.id }) {
+            downloadQueue[queuedIndex].completions.append(completion)
+            return
+        }
+
+        downloadQueue.append(QueuedDownload(target: target, completions: [completion]))
+        updateQueuedState()
+        startNextDownloadIfNeeded()
+    }
+
+    func cancelDownload() {
+        guard isDownloading else { return }
+
+        isCancellingDownload = true
+        let cancelledDownload = currentDownload
+        activeDownloadID = nil
+        downloadDelegate?.cancelAction?()
+        finishActiveDownload(errorMessage: nil)
+        complete(cancelledDownload, success: false, errorMessage: nil)
+        startNextDownloadIfNeeded()
+    }
+
+    private func startNextDownloadIfNeeded() {
+        guard !isDownloading, !downloadQueue.isEmpty else { return }
+
+        currentDownload = downloadQueue.removeFirst()
+        updateQueuedState()
+
+        guard let download = currentDownload else { return }
+        let target = download.target
 
         do {
             try AppDirectoryUtility.ensureDirectoryExists()
         } catch {
             let message = String(localized: "Failed to prepare the model storage folder: \(error.localizedDescription)", comment: "Model storage error")
             errorMessage = message
-            completion(false, message)
+            finishActiveDownload(errorMessage: message)
+            complete(download, success: false, errorMessage: message)
+            startNextDownloadIfNeeded()
             return
         }
 
@@ -201,17 +257,24 @@ final class ModelDownloadManager: ObservableObject {
                 self?.progress = progress
             },
             completionHandler: { [weak self] in
-                guard self?.activeDownloadID == downloadID else { return }
-                self?.finishDownload(errorMessage: nil)
-                completion(true, nil)
+                guard let self = self else { return }
+                guard self.activeDownloadID == downloadID else { return }
+
+                let finishedDownload = self.currentDownload
+                self.finishActiveDownload(errorMessage: nil)
+                self.complete(finishedDownload, success: true, errorMessage: nil)
+                self.startNextDownloadIfNeeded()
             },
             errorHandler: { [weak self] errorMessage in
                 guard let self = self else { return }
                 guard self.activeDownloadID == downloadID else { return }
 
                 let wasCancelled = self.isCancellingDownload || errorMessage == "Download cancelled."
-                self.finishDownload(errorMessage: wasCancelled ? nil : errorMessage)
-                completion(false, wasCancelled ? nil : errorMessage)
+                let finishedDownload = self.currentDownload
+                let visibleError = wasCancelled ? nil : errorMessage
+                self.finishActiveDownload(errorMessage: visibleError)
+                self.complete(finishedDownload, success: false, errorMessage: visibleError)
+                self.startNextDownloadIfNeeded()
             }
         )
 
@@ -226,22 +289,27 @@ final class ModelDownloadManager: ObservableObject {
         task.resume()
     }
 
-    func cancelDownload() {
-        isCancellingDownload = true
-        activeDownloadID = nil
-        downloadDelegate?.cancelAction?()
-        finishDownload(errorMessage: nil)
-    }
-
-    private func finishDownload(errorMessage: String?) {
+    private func finishActiveDownload(errorMessage: String?) {
         isDownloading = false
         progress = 0.0
         currentTargetID = nil
         currentDisplayName = nil
         downloadTask = nil
         downloadDelegate = nil
+        currentDownload = nil
         activeDownloadID = nil
         isCancellingDownload = false
         self.errorMessage = errorMessage
+    }
+
+    private func complete(_ download: QueuedDownload?, success: Bool, errorMessage: String?) {
+        download?.completions.forEach { completion in
+            completion(success, errorMessage)
+        }
+    }
+
+    private func updateQueuedState() {
+        queuedTargetIDs = Set(downloadQueue.map { $0.target.id })
+        queuedDisplayNames = downloadQueue.map { $0.target.displayName }
     }
 }

@@ -27,7 +27,7 @@ struct CustomModelManagementView: View {
             }
 
             // Download progress
-            if modelDownloadManager.isDownloading {
+            if modelDownloadManager.hasPendingDownloads {
                 downloadProgressView
             }
 
@@ -86,7 +86,6 @@ struct CustomModelManagementView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .disabled(modelDownloadManager.isDownloading)
         }
     }
 
@@ -113,7 +112,6 @@ struct CustomModelManagementView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
-            .disabled(modelDownloadManager.isDownloading)
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -129,7 +127,8 @@ struct CustomModelManagementView: View {
                     CustomModelRow(
                         model: model,
                         isDownloading: modelDownloadManager.currentTargetID == model.id.uuidString,
-                        isActionDisabled: modelDownloadManager.isDownloading,
+                        isQueued: modelDownloadManager.isQueued(model.id.uuidString),
+                        isActionDisabled: modelDownloadManager.isActiveOrQueued(model.id.uuidString),
                         downloadProgress: modelDownloadManager.currentTargetID == model.id.uuidString ? modelDownloadManager.progress : 0,
                         onDownload: {
                             modelManager.downloadModel(model) { _, _ in }
@@ -148,7 +147,7 @@ struct CustomModelManagementView: View {
 
     private var downloadProgressView: some View {
         VStack(spacing: 8) {
-            if let modelName = modelDownloadManager.currentDisplayName {
+            if modelDownloadManager.isDownloading, let modelName = modelDownloadManager.currentDisplayName {
                 HStack {
                     Text(String(localized: "Downloading \(modelName)...", comment: "Downloading model status"))
                         .font(.subheadline)
@@ -160,8 +159,16 @@ struct CustomModelManagementView: View {
 
                 ProgressView(value: modelDownloadManager.progress)
                     .progressViewStyle(.linear)
+            }
 
-                Button(String(localized: "Cancel", comment: "Cancel button")) {
+            if modelDownloadManager.queuedCount > 0 {
+                Text(String(localized: "Queued downloads: \(modelDownloadManager.queuedCount)", comment: "Queued model download count"))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            if modelDownloadManager.isDownloading {
+                Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
                     modelDownloadManager.cancelDownload()
                 }
                 .buttonStyle(.borderless)
@@ -180,6 +187,7 @@ struct CustomModelManagementView: View {
 struct CustomModelRow: View {
     let model: CustomModel
     let isDownloading: Bool
+    let isQueued: Bool
     let isActionDisabled: Bool
     let downloadProgress: Double
     let onDownload: () -> Void
@@ -215,7 +223,11 @@ struct CustomModelRow: View {
                     }
 
                     // Status
-                    if !model.isDownloaded && !isDownloading {
+                    if isQueued {
+                        Text(String(localized: "Queued", comment: "Model download queued status"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if !model.isDownloaded && !isDownloading {
                         Text(String(localized: "Not downloaded", comment: "Model not downloaded status"))
                             .font(.caption)
                             .foregroundColor(.orange)
@@ -231,6 +243,11 @@ struct CustomModelRow: View {
                     ProgressView(value: downloadProgress)
                         .progressViewStyle(.circular)
                         .scaleEffect(0.7)
+                        .frame(width: 24, height: 24)
+                } else if isQueued {
+                    Image(systemName: "clock")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
                         .frame(width: 24, height: 24)
                 } else if !model.isDownloaded && model.source.isURL {
                     Button(action: onDownload) {
