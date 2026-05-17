@@ -54,7 +54,7 @@ class HomeViewModel: ObservableObject {
     private var isInitializing = true  // Prevents saving during init
     private let minimumValidModelSize: Int64 = 50 * 1024 * 1024
     private let transcriptionControlQueue = DispatchQueue(label: "WhisperAutoCaptions.HomeViewModel.transcription")
-    private var activeWhisperProcess: Process?
+    private var activeExternalProcess: Process?
     private var cancellationRequested = false
 
     // MARK: - Initialization
@@ -174,20 +174,25 @@ class HomeViewModel: ObservableObject {
     private func beginTranscriptionRun() {
         transcriptionControlQueue.sync {
             cancellationRequested = false
-            activeWhisperProcess = nil
+            activeExternalProcess = nil
         }
     }
 
-    private func setActiveWhisperProcess(_ process: Process?) {
-        transcriptionControlQueue.sync {
-            activeWhisperProcess = process
+    private func setActiveExternalProcess(_ process: Process?) {
+        let shouldTerminate = transcriptionControlQueue.sync {
+            activeExternalProcess = process
+            return cancellationRequested && process != nil
+        }
+
+        if shouldTerminate {
+            process?.terminate()
         }
     }
 
     func cancelTranscription() {
         let process = transcriptionControlQueue.sync { () -> Process? in
             cancellationRequested = true
-            return activeWhisperProcess
+            return activeExternalProcess
         }
 
         process?.terminate()
@@ -195,7 +200,7 @@ class HomeViewModel: ObservableObject {
     }
 
     private func finishCancelledTranscription() {
-        setActiveWhisperProcess(nil)
+        setActiveExternalProcess(nil)
         let update = {
             self.progress = 0.0
             self.progressPercentage = 0
@@ -316,7 +321,10 @@ class HomeViewModel: ObservableObject {
             let outputWavFilePath = AudioService.shared.prepareAudioForWhisper(
                 inputPath: filePathString,
                 projectName: projectName,
-                tempFolder: tempFolder
+                tempFolder: tempFolder,
+                processUpdate: { [weak self] process in
+                    self?.setActiveExternalProcess(process)
+                }
             )
 
             if self.hasCancellationRequest {
@@ -334,7 +342,16 @@ class HomeViewModel: ObservableObject {
 
             let segmentDuration = Double(settings.audioSegmentDuration)
             let validSegmentDuration = segmentDuration > 0 ? segmentDuration : 600.0
-            let splitWavFilePaths = AudioService.shared.splitWav(inputFilePath: outputWavFilePath, segmentDuration: validSegmentDuration)
+            let splitWavFilePaths = AudioService.shared.splitWav(
+                inputFilePath: outputWavFilePath,
+                segmentDuration: validSegmentDuration,
+                processUpdate: { [weak self] process in
+                    self?.setActiveExternalProcess(process)
+                },
+                isCancelled: { [weak self] in
+                    self?.hasCancellationRequest ?? true
+                }
+            )
 
             if self.hasCancellationRequest {
                 self.finishCancelledTranscription()
@@ -452,7 +469,7 @@ class HomeViewModel: ObservableObject {
             selectedLanguage: selectedLanguage,
             outputWavFilePath: wavPath,
             processStarted: { [weak self] process in
-                self?.setActiveWhisperProcess(process)
+                self?.setActiveExternalProcess(process)
             },
             progressCallback: { [weak self] percentage, progress, remainingTime in
                 self?.progressPercentage = percentage
@@ -463,7 +480,7 @@ class HomeViewModel: ObservableObject {
                 self?.outputCaptions += captions
             },
             completion: { [weak self] srtFilePath in
-                self?.setActiveWhisperProcess(nil)
+                self?.setActiveExternalProcess(nil)
                 completion(srtFilePath)
             }
         )

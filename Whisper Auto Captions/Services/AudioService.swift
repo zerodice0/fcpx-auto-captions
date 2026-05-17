@@ -14,6 +14,8 @@ class AudioService {
     static let shared = AudioService()
     private init() {}
 
+    typealias ProcessUpdate = (Process?) -> Void
+
     // MARK: - Constants
     private let whisperSampleRate: Double = 16000  // Required sample rate for whisper.cpp
 
@@ -44,7 +46,12 @@ class AudioService {
     /// Prepare input audio file for whisper.cpp processing
     /// - If input is already a 16kHz WAV, copies it into the temp workspace
     /// - Otherwise, converts to 16kHz mono WAV using ffmpeg
-    func prepareAudioForWhisper(inputPath: String, projectName: String, tempFolder: String) -> String {
+    func prepareAudioForWhisper(
+        inputPath: String,
+        projectName: String,
+        tempFolder: String,
+        processUpdate: ProcessUpdate? = nil
+    ) -> String {
         let wavFilePath = uniqueWavFilePath(projectName: projectName, tempFolder: tempFolder)
         let fileManager = FileManager.default
 
@@ -67,7 +74,9 @@ class AudioService {
         task.launchPath = ffmpegPath
         task.arguments = ["-i", inputPath, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wavFilePath]
         task.launch()
+        processUpdate?(task)
         task.waitUntilExit()
+        processUpdate?(nil)
 
         return wavFilePath
     }
@@ -96,7 +105,12 @@ class AudioService {
     ///   - inputFilePath: Path to the input WAV file
     ///   - segmentDuration: Duration of each segment in seconds (default: 600 = 10 minutes)
     /// - Returns: Array of paths to the split WAV files
-    func splitWav(inputFilePath: String, segmentDuration: Double = 600) -> [String] {
+    func splitWav(
+        inputFilePath: String,
+        segmentDuration: Double = 600,
+        processUpdate: ProcessUpdate? = nil,
+        isCancelled: () -> Bool = { false }
+    ) -> [String] {
         var result: [String] = []
 
         let fileURL = URL(fileURLWithPath: inputFilePath)
@@ -120,6 +134,10 @@ class AudioService {
         }
 
         for i in 0...numberOfSegments {
+            if isCancelled() {
+                break
+            }
+
             let outputFilePath = "\(outputPrefix)\(i).wav"
 
             let task = Process()
@@ -132,7 +150,14 @@ class AudioService {
                 outputFilePath
             ]
             task.launch()
+            processUpdate?(task)
             task.waitUntilExit()
+            processUpdate?(nil)
+
+            if isCancelled() {
+                break
+            }
+
             result.append(outputFilePath)
         }
 
