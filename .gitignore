@@ -32,7 +32,7 @@ Packages/
 .context/
 
 # Local automation artifacts
-docs/manual-qa-checklist.md
+docs/manual-qa-artifacts/
 mcp_audit.db
 mcp_security.log
 
