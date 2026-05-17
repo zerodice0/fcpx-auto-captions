@@ -7,6 +7,13 @@
 
 import Foundation
 
+extension String {
+    var normalizedSRTLineEndings: String {
+        replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+    }
+}
+
 /// Service for SRT file operations
 class SRTService {
     // MARK: - Singleton
@@ -42,6 +49,7 @@ class SRTService {
             do {
                 let srtContent = try String(contentsOfFile: srtPath, encoding: .utf8)
                 let subtitles: [String] = srtContent
+                    .normalizedSRTLineEndings
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     .components(separatedBy: "\n\n")
 
@@ -91,7 +99,8 @@ class SRTService {
     // MARK: - Adjust SRT Time
     /// Adjust SRT timestamp by adding a fixed offset in seconds
     func adjustSrtTime(srtTime: String, offsetSeconds: TimeInterval) -> String {
-        let timeComponents = srtTime.components(separatedBy: ":")
+        let normalizedSrtTime = srtTime.trimmingCharacters(in: .whitespacesAndNewlines)
+        let timeComponents = normalizedSrtTime.components(separatedBy: ":")
         guard timeComponents.count >= 3 else { return srtTime }
 
         let hours = Int(timeComponents[0]) ?? 0
