@@ -42,27 +42,20 @@ class AudioService {
     // MARK: - Audio Preparation
 
     /// Prepare input audio file for whisper.cpp processing
-    /// - If input is already a 16kHz WAV, returns the original path (no conversion)
+    /// - If input is already a 16kHz WAV, copies it into the temp workspace
     /// - Otherwise, converts to 16kHz mono WAV using ffmpeg
     func prepareAudioForWhisper(inputPath: String, projectName: String, tempFolder: String) -> String {
-        // Skip conversion if already a 16kHz WAV file
-        if !needsConversion(inputPath) {
-            return inputPath
-        }
-
-        // Generate output path
-        var wavFileName = projectName + ".wav"
-        var wavFilePath = tempFolder + wavFileName
-
+        let wavFilePath = uniqueWavFilePath(projectName: projectName, tempFolder: tempFolder)
         let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: wavFilePath) {
-            // Rename the file if it already exists
-            var counter = 1
-            while fileManager.fileExists(atPath: wavFilePath) {
-                wavFileName = "\(projectName)_\(counter).wav"
-                wavFilePath = tempFolder + wavFileName
-                counter += 1
+
+        // Keep all intermediate outputs in the temp workspace, even when no conversion is needed.
+        if !needsConversion(inputPath) {
+            do {
+                try fileManager.copyItem(atPath: inputPath, toPath: wavFilePath)
+            } catch {
+                return wavFilePath
             }
+            return wavFilePath
         }
 
         guard let ffmpegPath = Bundle.main.path(forResource: "ffmpeg", ofType: nil) else {
@@ -75,6 +68,24 @@ class AudioService {
         task.arguments = ["-i", inputPath, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wavFilePath]
         task.launch()
         task.waitUntilExit()
+
+        return wavFilePath
+    }
+
+    private func uniqueWavFilePath(projectName: String, tempFolder: String) -> String {
+        let fileManager = FileManager.default
+        let tempFolderURL = URL(fileURLWithPath: tempFolder, isDirectory: true)
+        var wavFileName = projectName + ".wav"
+        var wavFilePath = tempFolderURL.appendingPathComponent(wavFileName).path
+
+        if fileManager.fileExists(atPath: wavFilePath) {
+            var counter = 1
+            while fileManager.fileExists(atPath: wavFilePath) {
+                wavFileName = "\(projectName)_\(counter).wav"
+                wavFilePath = tempFolderURL.appendingPathComponent(wavFileName).path
+                counter += 1
+            }
+        }
 
         return wavFilePath
     }
