@@ -221,6 +221,27 @@ final class ModelDownloadManager: ObservableObject {
         startNextDownloadIfNeeded()
     }
 
+    func cancelQueuedDownload(targetID: String) {
+        guard let index = downloadQueue.firstIndex(where: { $0.target.id == targetID }) else {
+            return
+        }
+
+        let cancelledDownload = downloadQueue.remove(at: index)
+        updateQueuedState()
+        complete(cancelledDownload, success: false, errorMessage: nil)
+    }
+
+    func cancelAllDownloads() {
+        let queuedDownloads = downloadQueue
+        downloadQueue.removeAll()
+        updateQueuedState()
+        queuedDownloads.forEach { download in
+            complete(download, success: false, errorMessage: nil)
+        }
+
+        cancelDownload()
+    }
+
     private func startNextDownloadIfNeeded() {
         guard !isDownloading, !downloadQueue.isEmpty else { return }
 

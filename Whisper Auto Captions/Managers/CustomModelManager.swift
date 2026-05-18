@@ -20,6 +20,7 @@ class CustomModelManager: ObservableObject {
     // MARK: - Private Properties
 
     private let modelDownloadManager = ModelDownloadManager.shared
+    private let minimumValidModelSize: Int64 = 50 * 1024 * 1024
 
     // MARK: - Initialization
 
@@ -55,6 +56,10 @@ class CustomModelManager: ObservableObject {
     /// - Returns: The created CustomModel, or nil if import failed
     @discardableResult
     func addModel(name: String, localPath: String) -> CustomModel? {
+        guard localModelValidationError(atPath: localPath) == nil else {
+            return nil
+        }
+
         let sourceURL = URL(fileURLWithPath: localPath)
 
         let fileSize = getFileSize(atPath: localPath)
@@ -121,6 +126,34 @@ class CustomModelManager: ObservableObject {
             return false
         }
         return FileManager.default.fileExists(atPath: path.path)
+    }
+
+    func localModelValidationError(atPath path: String) -> String? {
+        let fileManager = FileManager.default
+        var isDirectory = ObjCBool(false)
+
+        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else {
+            return String(localized: "The selected model file does not exist.", comment: "Missing local model file error")
+        }
+
+        guard !isDirectory.boolValue else {
+            return String(localized: "Select a GGML model .bin file, not a folder.", comment: "Local model folder selected error")
+        }
+
+        let url = URL(fileURLWithPath: path)
+        guard url.pathExtension.lowercased() == "bin" else {
+            return String(localized: "Select a GGML model file with a .bin extension.", comment: "Invalid local model extension error")
+        }
+
+        guard let fileSize = getFileSize(atPath: path) else {
+            return String(localized: "Could not read the selected model file.", comment: "Unreadable local model file error")
+        }
+
+        guard fileSize >= minimumValidModelSize else {
+            return String(localized: "The selected file is too small to be a valid GGML Whisper model.", comment: "Local model file too small error")
+        }
+
+        return nil
     }
 
     /// Find a custom model by name

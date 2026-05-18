@@ -265,6 +265,12 @@ struct AddCustomModelView: View {
             dismiss()
 
         case .local:
+            if let validationError = modelManager.localModelValidationError(atPath: localFilePath) {
+                errorMessage = validationError
+                showError = true
+                return
+            }
+
             if modelManager.addModel(name: trimmedName, localPath: localFilePath) != nil {
                 dismiss()
             } else {

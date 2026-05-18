@@ -119,6 +119,11 @@ struct HomeView: View {
                                 .font(.caption)
                                 .foregroundColor(.red)
                                 .multilineTextAlignment(.center)
+                        } else if viewModel.isSelectedModelStartPending {
+                            Text(String(localized: "Transcription will start after the selected model downloads.", comment: "Pending transcription after model download status"))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
                         }
                     }
                 }
@@ -149,12 +154,26 @@ struct HomeView: View {
                             .foregroundColor(.secondary)
                     }
 
-                    Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
-                        modelDownloadManager.cancelDownload()
+                    if viewModel.hasStartPendingDownload {
+                        Text(String(localized: "A transcription is waiting for its model download.", comment: "Pending transcription download status"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.red)
-                    .disabled(!modelDownloadManager.isDownloading)
+
+                    HStack(spacing: 12) {
+                        Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
+                            modelDownloadManager.cancelDownload()
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundColor(.red)
+                        .disabled(!modelDownloadManager.isDownloading)
+
+                        Button(String(localized: "Cancel All", comment: "Cancel all downloads button")) {
+                            viewModel.cancelAllModelDownloads()
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundColor(.red)
+                    }
                 }
                 .frame(width: 280)
                 .padding()
@@ -201,9 +220,12 @@ struct HomeView: View {
                 .frame(width: 24, height: 24)
                 .help(String(localized: "Downloading selected model", comment: "Selected model downloading tooltip"))
         } else if viewModel.isSelectedModelQueued {
-            Image(systemName: "clock")
-                .foregroundColor(.secondary)
-                .help(String(localized: "Selected model is queued for download", comment: "Selected model queued tooltip"))
+            Button(action: viewModel.cancelSelectedQueuedDownload) {
+                Image(systemName: "xmark.circle")
+            }
+            .buttonStyle(.borderless)
+            .foregroundColor(.secondary)
+            .help(String(localized: "Cancel queued download for selected model", comment: "Cancel selected queued model tooltip"))
         } else if viewModel.canDownloadSelectedModel {
             Button(action: viewModel.downloadSelectedModel) {
                 Image(systemName: "arrow.down.circle")

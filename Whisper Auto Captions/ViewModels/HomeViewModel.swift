@@ -197,6 +197,12 @@ class HomeViewModel: ObservableObject {
         return pendingStartDownloadTargetIDs.contains(targetID) && modelDownloadManager.isActiveOrQueued(targetID)
     }
 
+    var hasStartPendingDownload: Bool {
+        return pendingStartDownloadTargetIDs.contains { targetID in
+            modelDownloadManager.isActiveOrQueued(targetID)
+        }
+    }
+
     func reconcileSelectedModelWithAvailableModels() {
         guard !isModelAvailable(selectedModel) else { return }
         selectedModel = ModelData.models.contains("Medium") ? "Medium" : ModelData.models[0]
@@ -337,6 +343,15 @@ class HomeViewModel: ObservableObject {
     
     func cancelDownload() {
         modelDownloadManager.cancelDownload()
+    }
+
+    func cancelSelectedQueuedDownload() {
+        guard let targetID = selectedModelDownloadTargetID else { return }
+        modelDownloadManager.cancelQueuedDownload(targetID: targetID)
+    }
+
+    func cancelAllModelDownloads() {
+        modelDownloadManager.cancelAllDownloads()
     }
     
     // MARK: - Main Processing

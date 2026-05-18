@@ -133,6 +133,9 @@ struct CustomModelManagementView: View {
                         onDownload: {
                             modelManager.downloadModel(model) { _, _ in }
                         },
+                        onCancelQueued: {
+                            modelDownloadManager.cancelQueuedDownload(targetID: model.id.uuidString)
+                        },
                         onDelete: {
                             modelToDelete = model
                             showDeleteConfirmation = true
@@ -167,9 +170,17 @@ struct CustomModelManagementView: View {
                     .foregroundColor(.secondary)
             }
 
-            if modelDownloadManager.isDownloading {
-                Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
-                    modelDownloadManager.cancelDownload()
+            HStack(spacing: 12) {
+                if modelDownloadManager.isDownloading {
+                    Button(String(localized: "Cancel Current", comment: "Cancel current download button")) {
+                        modelDownloadManager.cancelDownload()
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.red)
+                }
+
+                Button(String(localized: "Cancel All", comment: "Cancel all downloads button")) {
+                    modelDownloadManager.cancelAllDownloads()
                 }
                 .buttonStyle(.borderless)
                 .foregroundColor(.red)
@@ -191,6 +202,7 @@ struct CustomModelRow: View {
     let isActionDisabled: Bool
     let downloadProgress: Double
     let onDownload: () -> Void
+    let onCancelQueued: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -245,10 +257,13 @@ struct CustomModelRow: View {
                         .scaleEffect(0.7)
                         .frame(width: 24, height: 24)
                 } else if isQueued {
-                    Image(systemName: "clock")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                        .frame(width: 24, height: 24)
+                    Button(action: onCancelQueued) {
+                        Image(systemName: "xmark.circle")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.secondary)
+                    .help(String(localized: "Cancel queued download", comment: "Cancel queued model download tooltip"))
                 } else if !model.isDownloaded && model.source.isURL {
                     Button(action: onDownload) {
                         Image(systemName: "arrow.down.circle")
