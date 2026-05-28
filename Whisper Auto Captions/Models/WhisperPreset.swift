@@ -82,8 +82,8 @@ enum WhisperPreset: String, CaseIterable, Codable, Identifiable {
             settings.threads = 4
 
         case .bestQuality:
-            settings.bestOf = 10
-            settings.beamSize = 10
+            settings.bestOf = WhisperSettings.maxDecoderCount
+            settings.beamSize = WhisperSettings.maxDecoderCount
             settings.entropyThreshold = 2.8
             settings.threads = 4
 

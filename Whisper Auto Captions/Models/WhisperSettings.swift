@@ -9,6 +9,8 @@ import Foundation
 
 /// Stores all configurable parameters for whisper.cpp transcription
 struct WhisperSettings: Codable, Equatable {
+    static let maxDecoderCount = 8
+
     // MARK: - Basic Settings
     var model: String = "Medium"
     var language: String = "Auto"
@@ -18,9 +20,9 @@ struct WhisperSettings: Codable, Equatable {
     var customFps: String = "30"
 
     // MARK: - Quality Settings
-    /// Number of candidates to consider for best transcription (1-10)
+    /// Number of candidates to consider for best transcription (1-8)
     var bestOf: Int = 5
-    /// Beam search width for decoding (1-10)
+    /// Beam search width for decoding (1-8)
     var beamSize: Int = 5
     /// Sampling temperature (0.0 = greedy, higher = more random)
     var temperature: Double = 0.0
@@ -83,5 +85,14 @@ struct WhisperSettings: Codable, Equatable {
     // MARK: - Reset to defaults
     mutating func resetToDefaults() {
         self = WhisperSettings.default
+    }
+
+    mutating func clampDecoderSettings() {
+        bestOf = Self.clampedDecoderCount(bestOf)
+        beamSize = Self.clampedDecoderCount(beamSize)
+    }
+
+    static func clampedDecoderCount(_ value: Int) -> Int {
+        min(max(value, 1), maxDecoderCount)
     }
 }

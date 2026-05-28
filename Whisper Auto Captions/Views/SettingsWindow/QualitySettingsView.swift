@@ -23,7 +23,7 @@ struct QualitySettingsView: View {
                 HStack {
                     Text(String(localized: "Best-of:", comment: "Best-of setting label"))
                         .frame(width: 150, alignment: .trailing)
-                    Stepper(value: $settings.bestOf, in: 1...10) {
+                    Stepper(value: $settings.bestOf, in: 1...WhisperSettings.maxDecoderCount) {
                         Text("\(settings.bestOf)")
                             .frame(width: 40)
                     }
@@ -39,7 +39,7 @@ struct QualitySettingsView: View {
                 HStack {
                     Text(String(localized: "Beam Size:", comment: "Beam size setting label"))
                         .frame(width: 150, alignment: .trailing)
-                    Stepper(value: $settings.beamSize, in: 1...10) {
+                    Stepper(value: $settings.beamSize, in: 1...WhisperSettings.maxDecoderCount) {
                         Text("\(settings.beamSize)")
                             .frame(width: 40)
                     }

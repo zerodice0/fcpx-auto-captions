@@ -130,8 +130,8 @@ struct SettingsSuggestion: Codable {
 
     /// Apply this suggestion to WhisperSettings
     func apply(to settings: inout WhisperSettings) {
-        if let v = beamSize { settings.beamSize = v }
-        if let v = bestOf { settings.bestOf = v }
+        if let v = beamSize { settings.beamSize = WhisperSettings.clampedDecoderCount(v) }
+        if let v = bestOf { settings.bestOf = WhisperSettings.clampedDecoderCount(v) }
         if let v = temperature { settings.temperature = v }
         if let v = entropyThreshold { settings.entropyThreshold = v }
         if let v = logProbThreshold { settings.logProbThreshold = v }

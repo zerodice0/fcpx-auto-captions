@@ -179,8 +179,8 @@ class GeminiService: ObservableObject {
         Based on the user's description, suggest optimal Whisper settings.
 
         Current settings:
-        - beamSize: \(currentSettings.beamSize) (range: 1-10, higher = more accurate but slower)
-        - bestOf: \(currentSettings.bestOf) (range: 1-10, candidates to consider)
+        - beamSize: \(currentSettings.beamSize) (range: 1-\(WhisperSettings.maxDecoderCount), higher = more accurate but slower)
+        - bestOf: \(currentSettings.bestOf) (range: 1-\(WhisperSettings.maxDecoderCount), candidates to consider)
         - temperature: \(currentSettings.temperature) (range: 0.0-1.0, 0 = deterministic, higher = more creative)
         - entropyThreshold: \(currentSettings.entropyThreshold) (range: 0.0-5.0, segment validation threshold)
         - logProbThreshold: \(currentSettings.logProbThreshold) (range: -5.0 to 0.0, log probability threshold)
@@ -197,7 +197,7 @@ class GeminiService: ObservableObject {
         Guidelines for suggestions:
         - For poor audio quality: increase beamSize and bestOf, enable higher entropy threshold
         - For fast processing: reduce beamSize and bestOf, increase threads
-        - For maximum accuracy: high beamSize (8-10), high bestOf (8-10), temperature 0
+        - For maximum accuracy: high beamSize (8), high bestOf (8), temperature 0
         - For background noise: increase noSpeechThreshold
         - For long videos: consider using flash attention if available
 

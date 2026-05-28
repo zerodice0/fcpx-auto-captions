@@ -69,13 +69,14 @@ class SettingsManager: ObservableObject {
     // MARK: - Initialization
     private init() {
         // Load settings from UserDefaults
-        let loadedSettings: WhisperSettings
+        var loadedSettings: WhisperSettings
         if let data = defaults.data(forKey: StorageKeys.settings),
            let decoded = try? JSONDecoder().decode(WhisperSettings.self, from: data) {
             loadedSettings = decoded
         } else {
             loadedSettings = WhisperSettings.default
         }
+        loadedSettings.clampDecoderSettings()
         self.settings = loadedSettings
 
         // Load title style settings from UserDefaults
@@ -164,8 +165,8 @@ class SettingsManager: ObservableObject {
     // MARK: - Settings Summary
     /// Returns a summary text describing the current settings
     var settingsSummary: String {
-        let bestOf = settings.bestOf
-        let beam = settings.beamSize
+        let bestOf = WhisperSettings.clampedDecoderCount(settings.bestOf)
+        let beam = WhisperSettings.clampedDecoderCount(settings.beamSize)
         return "best-of: \(bestOf), beam: \(beam)"
     }
 

@@ -27,6 +27,8 @@ class WhisperService {
         language: String
     ) -> [String] {
         var args = ["-m", modelPath]
+        let bestOf = WhisperSettings.clampedDecoderCount(settings.bestOf)
+        let beamSize = WhisperSettings.clampedDecoderCount(settings.beamSize)
 
         // Language
         if let langCode = LanguageData.code(for: language) {
@@ -37,11 +39,11 @@ class WhisperService {
         args += ["-pp", "-osrt", "-f", inputPath]
 
         // Quality settings (only add if different from defaults)
-        if settings.bestOf != 5 {
-            args += ["--best-of", "\(settings.bestOf)"]
+        if bestOf != 5 {
+            args += ["--best-of", "\(bestOf)"]
         }
-        if settings.beamSize != 5 {
-            args += ["--beam-size", "\(settings.beamSize)"]
+        if beamSize != 5 {
+            args += ["--beam-size", "\(beamSize)"]
         }
         if settings.temperature != 0.0 {
             args += ["--temperature", "\(settings.temperature)"]
@@ -65,6 +67,8 @@ class WhisperService {
         }
         if settings.flashAttention {
             args += ["--flash-attn"]
+        } else {
+            args += ["--no-flash-attn"]
         }
 
         // Output settings
