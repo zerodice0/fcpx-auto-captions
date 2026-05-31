@@ -76,7 +76,7 @@ Guide for coding agents working in this repository.
 
 ## Tooling Snapshot
 - Build tool: `xcodebuild`.
-- Dependency source: Xcode SPM integration (`Sparkle`, `Inject`).
+- Dependency source: Xcode SPM integration (`Sparkle`).
 - CI release pipeline: `.github/workflows/release.yml`.
 - Helper script: `scripts/download-ffmpeg.sh`.
 - No `Makefile` at repo root.

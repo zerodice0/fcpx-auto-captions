@@ -1,14 +1,7 @@
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 // MARK: - Transcription Tab
 struct TranscriptionTab: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-    
     @StateObject private var viewModel = HomeViewModel()
 
     var body: some View {
@@ -19,8 +12,5 @@ struct TranscriptionTab: View {
                 HomeView(viewModel: viewModel)
             }
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
 }

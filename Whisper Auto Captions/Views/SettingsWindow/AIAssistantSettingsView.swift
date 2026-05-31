@@ -6,14 +6,8 @@
 //
 
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 struct AIAssistantSettingsView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
     @Binding var settings: WhisperSettings
     @ObservedObject private var geminiService = GeminiService.shared
 

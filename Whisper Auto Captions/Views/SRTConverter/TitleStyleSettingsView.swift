@@ -1,14 +1,7 @@
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 // MARK: - Title Style Settings View (Popup)
 struct TitleStyleSettingsView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: SRTConverterViewModel
     let availableFonts: [String]
@@ -79,9 +72,6 @@ struct TitleStyleSettingsView: View {
             .padding()
         }
         .frame(minWidth: 450, minHeight: 500)
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
 
     // MARK: - Position Section

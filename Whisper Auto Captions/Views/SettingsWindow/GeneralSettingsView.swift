@@ -6,15 +6,8 @@
 //
 
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 struct GeneralSettingsView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-
     @StateObject private var updateService = UpdateService.shared
     @State private var automaticallyCheckForUpdates = true
     @State private var automaticallyDownloadUpdates = false
@@ -118,9 +111,6 @@ struct GeneralSettingsView: View {
             automaticallyCheckForUpdates = updateService.automaticallyChecksForUpdates
             automaticallyDownloadUpdates = updateService.automaticallyDownloadsUpdates
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
 
     private var appVersion: String {

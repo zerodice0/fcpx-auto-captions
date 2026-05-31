@@ -1,14 +1,7 @@
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 // MARK: - SRT Converter Result View
 struct SRTConverterResultView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-    
     @ObservedObject var viewModel: SRTConverterViewModel
     @State private var showOperationError = false
     @State private var operationErrorMessage = ""
@@ -61,9 +54,6 @@ struct SRTConverterResultView: View {
         } message: {
             Text(operationErrorMessage)
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
 
     private func saveFile(_ path: String) {

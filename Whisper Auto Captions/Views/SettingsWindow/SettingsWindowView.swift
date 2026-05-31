@@ -6,9 +6,6 @@
 //
 
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 enum SettingsSection: String, CaseIterable, Identifiable {
     case general = "General"
@@ -54,9 +51,6 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 }
 
 struct SettingsWindowView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var settingsManager = SettingsManager.shared
     @State private var selectedSection: SettingsSection = .general

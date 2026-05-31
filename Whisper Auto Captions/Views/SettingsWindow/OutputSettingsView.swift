@@ -6,9 +6,6 @@
 //
 
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 /// Preset options for audio segment duration
 enum SegmentDurationPreset: Int, CaseIterable {
@@ -35,9 +32,6 @@ enum SegmentDurationPreset: Int, CaseIterable {
 }
 
 struct OutputSettingsView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
     @Binding var settings: WhisperSettings
 
     private var selectedPreset: SegmentDurationPreset {

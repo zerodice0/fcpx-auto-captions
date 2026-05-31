@@ -1,14 +1,7 @@
 import SwiftUI
-#if DEBUG
-import Inject
-#endif
 
 // MARK: - Process View
 struct ProcessView: View {
-    #if DEBUG
-    @ObserveInjection var inject
-    #endif
-
     @ObservedObject var viewModel: HomeViewModel
     @State private var showOperationError = false
     @State private var operationErrorMessage = ""
@@ -27,9 +20,6 @@ struct ProcessView: View {
         } message: {
             Text(operationErrorMessage)
         }
-        #if DEBUG
-        .enableInjection()
-        #endif
     }
 
     private var header: some View {
