@@ -238,8 +238,12 @@ struct AddCustomModelView: View {
         panel.allowedContentTypes = [UTType(filenameExtension: "bin") ?? .data]
         panel.message = String(localized: "Select a GGML Whisper model file", comment: "File picker message")
 
-        if panel.runModal() == .OK, let url = panel.url {
-            localFilePath = url.path
+        panel.begin { response in
+            DispatchQueue.main.async {
+                if response == .OK, let url = panel.url {
+                    localFilePath = url.path
+                }
+            }
         }
     }
 

@@ -240,7 +240,11 @@ struct HomeView: View {
         FileUtility.selectFile(allowedTypes: [.audio, .movie], allowDirectories: false) { url in
             guard let url else { return }
 
-            if FileUtility.isValidMediaFile(url: url, allowedTypes: [.audio, .movie]) {
+            let isValidFile = FileUtility.withSecurityScopedAccess(to: url) {
+                FileUtility.isValidMediaFile(url: url, allowedTypes: [.audio, .movie])
+            }
+
+            if isValidFile {
                 viewModel.selectFile(url: url)
             } else {
                 invalidFileErrorMessage = FileUtility.mediaFileValidationMessage(

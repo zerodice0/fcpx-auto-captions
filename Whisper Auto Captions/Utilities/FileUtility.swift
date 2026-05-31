@@ -54,12 +54,44 @@ struct FileUtility {
         panel.canChooseDirectories = allowDirectories
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = allowedTypes
-        
-        if panel.runModal() == .OK {
-            completion(panel.urls.first)
-        } else {
-            completion(nil)
+
+        panel.begin { response in
+            DispatchQueue.main.async {
+                if response == .OK {
+                    completion(panel.urls.first)
+                } else {
+                    completion(nil)
+                }
+            }
         }
+    }
+
+    static func withSecurityScopedAccess<T>(
+        to url: URL,
+        perform operation: () throws -> T
+    ) rethrows -> T {
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccessing {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        return try operation()
+    }
+
+    static func withSecurityScopedAccess<T>(
+        to url: URL,
+        perform operation: () async throws -> T
+    ) async rethrows -> T {
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccessing {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        return try await operation()
     }
 
     static func isValidMediaFile(url: URL, allowedTypes: [UTType]) -> Bool {

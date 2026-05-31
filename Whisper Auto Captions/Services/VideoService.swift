@@ -29,18 +29,20 @@ class VideoService {
     /// - Parameter url: The URL of the video file
     /// - Returns: The frame rate as a Float, or nil if extraction fails
     func extractFrameRate(from url: URL) async -> Float? {
-        let asset = AVURLAsset(url: url)
+        await FileUtility.withSecurityScopedAccess(to: url) {
+            let asset = AVURLAsset(url: url)
 
-        do {
-            let tracks = try await asset.loadTracks(withMediaType: .video)
-            guard let videoTrack = tracks.first else {
+            do {
+                let tracks = try await asset.loadTracks(withMediaType: .video)
+                guard let videoTrack = tracks.first else {
+                    return nil
+                }
+
+                let frameRate = try await videoTrack.load(.nominalFrameRate)
+                return frameRate > 0 ? frameRate : nil
+            } catch {
                 return nil
             }
-
-            let frameRate = try await videoTrack.load(.nominalFrameRate)
-            return frameRate > 0 ? frameRate : nil
-        } catch {
-            return nil
         }
     }
 }

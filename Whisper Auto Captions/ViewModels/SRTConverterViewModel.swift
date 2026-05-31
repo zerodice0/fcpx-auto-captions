@@ -189,20 +189,26 @@ class SRTConverterViewModel: ObservableObject {
         guard let srtURL = srtFileURL else { return }
 
         let srtPath = srtURL.path
-        guard SRTService.shared.isValidSRTFile(srtPath) else {
+        let isValidSRTFile = FileUtility.withSecurityScopedAccess(to: srtURL) {
+            SRTService.shared.isValidSRTFile(srtPath)
+        }
+
+        guard isValidSRTFile else {
             conversionErrorMessage = String(localized: "The selected SRT file is empty or does not contain valid subtitle timestamps.", comment: "Invalid SRT conversion error")
             showConversionError = true
             return
         }
 
-        outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
-            srtPath: srtPath,
-            fps: currentFps,
-            projectName: projectName,
-            width: currentWidth,
-            height: currentHeight,
-            titleStyle: titleStyle
-        )
+        outputFCPXMLFilePath = FileUtility.withSecurityScopedAccess(to: srtURL) {
+            FCPXMLService.srtToFCPXML(
+                srtPath: srtPath,
+                fps: currentFps,
+                projectName: projectName,
+                width: currentWidth,
+                height: currentHeight,
+                titleStyle: titleStyle
+            )
+        }
 
         if FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) {
             conversionComplete = true
