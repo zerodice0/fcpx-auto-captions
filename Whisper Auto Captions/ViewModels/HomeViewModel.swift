@@ -385,14 +385,27 @@ class HomeViewModel: ObservableObject {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
             // Prepare audio for whisper.cpp (converts to 16kHz WAV if needed)
-            let outputWavFilePath = AudioService.shared.prepareAudioForWhisper(
-                inputPath: filePathString,
-                projectName: projectName,
-                tempFolder: tempFolder,
-                processUpdate: { [weak self] process in
-                    self?.setActiveExternalProcess(process)
+            let audioPreparationResult = FileUtility.withSecurityScopedAccess(to: fileURL) {
+                AudioService.shared.prepareAudioForWhisper(
+                    inputPath: filePathString,
+                    projectName: projectName,
+                    tempFolder: tempFolder,
+                    processUpdate: { [weak self] process in
+                        self?.setActiveExternalProcess(process)
+                    }
+                )
+            }
+
+            let outputWavFilePath: String
+            switch audioPreparationResult {
+            case .success(let wavFilePath):
+                outputWavFilePath = wavFilePath
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    self.failTranscription("Error: \(error.userMessage)")
                 }
-            )
+                return
+            }
 
             if self.hasCancellationRequest {
                 self.finishCancelledTranscription()
@@ -422,6 +435,13 @@ class HomeViewModel: ObservableObject {
 
             if self.hasCancellationRequest {
                 self.finishCancelledTranscription()
+                return
+            }
+
+            guard !splitWavFilePaths.isEmpty else {
+                DispatchQueue.main.async {
+                    self.failTranscription("Error: Failed to split audio into processable segments")
+                }
                 return
             }
 
@@ -476,7 +496,7 @@ class HomeViewModel: ObservableObject {
             modelPath: modelPath,
             settings: settings,
             selectedLanguage: selectedLanguage
-        ) { [weak self] srtFilePath in
+        ) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
 
@@ -485,8 +505,12 @@ class HomeViewModel: ObservableObject {
                     return
                 }
 
-                guard !srtFilePath.isEmpty else {
-                    self.failTranscription("Error: Failed to generate subtitles for batch \(nextIndex + 1)")
+                guard case .success(let srtFilePath) = result else {
+                    if case .failure(let error) = result {
+                        self.failTranscription("Error: Batch \(nextIndex + 1) failed. \(error.userMessage)")
+                    } else {
+                        self.failTranscription("Error: Failed to generate subtitles for batch \(nextIndex + 1)")
+                    }
                     return
                 }
 
@@ -568,7 +592,7 @@ class HomeViewModel: ObservableObject {
         modelPath: String,
         settings: WhisperSettings,
         selectedLanguage: String,
-        completion: @escaping (String) -> Void
+        completion: @escaping (Result<String, WhisperService.TranscriptionError>) -> Void
     ) {
         WhisperService.shared.transcribe(
             settings: settings,
@@ -586,9 +610,9 @@ class HomeViewModel: ObservableObject {
             outputCallback: { [weak self] captions in
                 self?.outputCaptions += captions
             },
-            completion: { [weak self] srtFilePath in
+            completion: { [weak self] result in
                 self?.setActiveExternalProcess(nil)
-                completion(srtFilePath)
+                completion(result)
             }
         )
     }

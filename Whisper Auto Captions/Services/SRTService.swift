@@ -20,20 +20,49 @@ class SRTService {
     static let shared = SRTService()
     private init() {}
 
+    enum ValidationResult {
+        case valid
+        case missing
+        case unreadable
+        case empty
+        case missingTimestamps
+    }
+
     // MARK: - Validation
+    /// Validate whether an SRT file exists and contains timestamped subtitle entries.
+    func validateSRTFile(_ path: String) -> ValidationResult {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: path) else {
+            return .missing
+        }
+
+        guard let attributes = try? fileManager.attributesOfItem(atPath: path),
+              let size = attributes[.size] as? Int64 else {
+            return .unreadable
+        }
+
+        guard size > 0 else {
+            return .empty
+        }
+
+        guard let content = try? String(contentsOfFile: path, encoding: .utf8) else {
+            return .unreadable
+        }
+
+        guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return .empty
+        }
+
+        guard content.contains("-->") else {
+            return .missingTimestamps
+        }
+
+        return .valid
+    }
+
     /// Check whether an SRT file exists and has at least one subtitle timestamp.
     func isValidSRTFile(_ path: String) -> Bool {
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: path),
-              let attributes = try? fileManager.attributesOfItem(atPath: path),
-              let size = attributes[.size] as? Int64,
-              size > 0,
-              let content = try? String(contentsOfFile: path, encoding: .utf8),
-              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              content.contains("-->") else {
-            return false
-        }
-        return true
+        validateSRTFile(path) == .valid
     }
 
     // MARK: - Merge SRT Files
