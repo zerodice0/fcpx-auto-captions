@@ -126,7 +126,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          DMG_NAME="$APP_NAME-$VERSION-Universal.dmg"
+          DMG_NAME="${APP_NAME// /.}-$VERSION-Universal.dmg"
 
           # Create DMG with app icon and background
           create-dmg \
@@ -191,11 +191,12 @@ jobs:
           PUB_DATE=$(date -R)
 
           # Get signature if available
-          # sign_update outputs full attribute string "sparkle:edSignature=... length=..."
+          # sign_update outputs a full attribute string including length. The
+          # enclosure already has length, so keep only Sparkle's signature attr.
           SIGNATURE="${SPARKLE_SIGNATURE:-}"
           SIGNATURE_ATTR=""
           if [ -n "$SIGNATURE" ]; then
-            SIGNATURE_ATTR="$SIGNATURE"
+            SIGNATURE_ATTR=$(printf '%s' "$SIGNATURE" | sed -E 's/[[:space:]]+length="[^"]*"//g')
           fi
 
           cat > "./build/appcast.xml" << EOF
@@ -225,6 +226,7 @@ jobs:
 
           echo "Generated appcast.xml:"
           cat "./build/appcast.xml"
+          xmllint --noout "./build/appcast.xml"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
