@@ -12,10 +12,10 @@
       <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <enclosure
-        url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.1.2/Whisper Auto Captions-1.1.2-Universal.dmg"
+        url="https://github.com/zerodice0/fcpx-auto-captions/releases/download/v1.1.2/Whisper.Auto.Captions-1.1.2-Universal.dmg"
         length="65731739"
         type="application/octet-stream"
-        sparkle:edSignature="x0QU0XFknq8fsK3P9z2DToEAld1ZvXKuH65gsczT2VkGmW5rWRaZfvrl/Gom4ms4PFXkx0AzPfbHovd1iC4ZDg==" length="65731739"
+        sparkle:edSignature="x0QU0XFknq8fsK3P9z2DToEAld1ZvXKuH65gsczT2VkGmW5rWRaZfvrl/Gom4ms4PFXkx0AzPfbHovd1iC4ZDg=="
       />
     </item>
   </channel>
