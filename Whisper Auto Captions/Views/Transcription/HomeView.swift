@@ -38,6 +38,38 @@ struct HomeView: View {
                     )
                 }
 
+                // Resolution Selection
+                GridRow {
+                    Text(String(localized: "Resolution:", comment: "Resolution label"))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker(selection: $viewModel.selectedResolution, label: EmptyView()) {
+                            ForEach(VideoResolution.allCases) { resolution in
+                                Text(resolution.displayName).tag(resolution)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(maxWidth: 300, alignment: .leading)
+
+                        if viewModel.selectedResolution == .custom {
+                            HStack(spacing: 8) {
+                                TextField(String(localized: "Width", comment: "Width placeholder"), text: $viewModel.customWidth)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                                Text("×")
+                                TextField(String(localized: "Height", comment: "Height placeholder"), text: $viewModel.customHeight)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 70)
+                            }
+
+                            if let warning = viewModel.resolutionWarning {
+                                Text(warning)
+                                    .font(.caption)
+                                    .foregroundColor(viewModel.isResolutionValid ? .orange : .red)
+                            }
+                        }
+                    }
+                }
+
                 // Model Selection
                 GridRow {
                     Text(String(localized: "Model:", comment: "Model label"))

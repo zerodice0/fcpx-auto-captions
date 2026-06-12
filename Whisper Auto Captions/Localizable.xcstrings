@@ -1237,6 +1237,9 @@
     "Final Cut Pro could not open the file: %@" : {
       "comment" : "Final Cut Pro open failed error"
     },
+    "Fixed" : {
+      "comment" : "Font scale mode"
+    },
     "Flash Attention" : {
       "comment" : "Flash attention toggle label",
       "localizations" : {
@@ -3145,6 +3148,9 @@
         }
       }
     },
+    "Preview" : {
+      "comment" : "Title style preview label"
+    },
     "Processors:" : {
       "comment" : "Processors setting label",
       "localizations" : {
@@ -3321,11 +3327,20 @@
         }
       }
     },
+    "Resolution must be between 640 and 8192." : {
+      "comment" : "Invalid resolution transcription warning"
+    },
+    "Resolution must be numeric." : {
+      "comment" : "Non-numeric resolution warning"
+    },
     "Resolution:" : {
       "comment" : "Resolution label"
     },
     "Right" : {
       "comment" : "Text alignment"
+    },
+    "Sample Caption\nPosition Preview" : {
+      "comment" : "Title style preview sample text"
     },
     "Save .fcpxml" : {
       "comment" : "Save FCPXML output button"
@@ -3335,6 +3350,12 @@
     },
     "Save File" : {
       "comment" : "Save panel title"
+    },
+    "Scale With Resolution" : {
+      "comment" : "Font scale mode"
+    },
+    "Scale:" : {
+      "comment" : "Font scale mode label"
     },
     "Segment Length" : {
       "comment" : "Segment length section header",
@@ -3648,6 +3669,9 @@
     },
     "The subtitle file did not contain timestamped subtitles." : {
       "comment" : "SRT missing timestamps error"
+    },
+    "The subtitle file was created, but it could not be read." : {
+      "comment" : "Unreadable SRT output error"
     },
     "The subtitle file was empty. The audio may contain no detectable speech." : {
       "comment" : "Empty SRT output error"

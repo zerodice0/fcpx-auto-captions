@@ -101,6 +101,8 @@ struct FCPXMLService {
             let hundredFoldTotalFrame = String(100 * totalFrame)
             let hundredFoldFps = String(Int(fps * 100))
 
+            let resolvedTitleStyle = titleStyle.resolved(forWidth: width, height: height)
+
             // Build FCPXML structure
             let fcpxmlElement = XMLElement(name: "fcpxml")
             fcpxmlElement.addSafeAttribute(name: "version", value: "1.9")
@@ -197,7 +199,7 @@ struct FCPXMLService {
                     hundredFoldOffsetFrame: hundredFoldOffsetFrame,
                     hundredFoldDurationFrame: hundredFoldDurationFrame,
                     hundredFoldFps: hundredFoldFps,
-                    titleStyle: titleStyle
+                    titleStyle: resolvedTitleStyle
                 )
                 gapElement.addChild(titleElement)
             }

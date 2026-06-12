@@ -14,6 +14,15 @@ class HomeViewModel: ObservableObject {
     @Published var customFps: String = "30" {
         didSet { saveFrameRateSettings() }
     }
+    @Published var selectedResolution: VideoResolution = .fullHD1080p {
+        didSet { saveResolutionSettings() }
+    }
+    @Published var customWidth: String = "1920" {
+        didSet { saveResolutionSettings() }
+    }
+    @Published var customHeight: String = "1080" {
+        didSet { saveResolutionSettings() }
+    }
     @Published var selectedLanguage = "Auto" {
         didSet { saveLanguageSetting() }
     }
@@ -62,6 +71,13 @@ class HomeViewModel: ObservableObject {
         }
         self.customFps = settings.customFps
 
+        let converterSettings = SettingsManager.shared.srtConverterSettings
+        if let resolution = VideoResolution(rawValue: converterSettings.selectedResolution) {
+            self.selectedResolution = resolution
+        }
+        self.customWidth = converterSettings.customWidth
+        self.customHeight = converterSettings.customHeight
+
         // Restore language and model
         self.selectedLanguage = settings.language
         self.selectedModel = settings.model
@@ -76,6 +92,15 @@ class HomeViewModel: ObservableObject {
         guard !isInitializing else { return }
         SettingsManager.shared.settings.selectedFrameRate = selectedFrameRate.rawValue
         SettingsManager.shared.settings.customFps = customFps
+    }
+
+    private func saveResolutionSettings() {
+        guard !isInitializing else { return }
+        var converterSettings = SettingsManager.shared.srtConverterSettings
+        converterSettings.selectedResolution = selectedResolution.rawValue
+        converterSettings.customWidth = customWidth
+        converterSettings.customHeight = customHeight
+        SettingsManager.shared.srtConverterSettings = converterSettings
     }
 
     private func saveLanguageSetting() {
@@ -125,9 +150,37 @@ class HomeViewModel: ObservableObject {
         }
         return selectedFrameRate.value
     }
-    
+
+    var currentWidth: Int {
+        if selectedResolution == .custom {
+            return Int(customWidth) ?? 0
+        }
+        return selectedResolution.width
+    }
+
+    var currentHeight: Int {
+        if selectedResolution == .custom {
+            return Int(customHeight) ?? 0
+        }
+        return selectedResolution.height
+    }
+
     var isFpsValid: Bool {
         return FrameRate.isValidFrameRate(currentFps)
+    }
+
+    var isResolutionValid: Bool {
+        let validation = VideoResolution.isValidResolution(width: currentWidth, height: currentHeight)
+        return validation.valid
+    }
+
+    var resolutionWarning: String? {
+        if selectedResolution == .custom && (Int(customWidth) == nil || Int(customHeight) == nil) {
+            return String(localized: "Resolution must be numeric.", comment: "Non-numeric resolution warning")
+        }
+
+        let validation = VideoResolution.isValidResolution(width: currentWidth, height: currentHeight)
+        return validation.message
     }
 
     var isProcessingComplete: Bool {
@@ -145,7 +198,11 @@ class HomeViewModel: ObservableObject {
     }
 
     var canStartTranscription: Bool {
-        return fileURL != nil && isFpsValid && isSelectedModelAvailable && !SettingsManager.shared.settings.noTimestamps
+        return fileURL != nil
+            && isFpsValid
+            && isResolutionValid
+            && isSelectedModelAvailable
+            && !SettingsManager.shared.settings.noTimestamps
     }
 
     var transcriptionBlockReason: String? {
@@ -154,6 +211,9 @@ class HomeViewModel: ObservableObject {
         }
         if !isFpsValid {
             return String(localized: "Frame rate must be between 0 and 120.", comment: "Invalid frame rate transcription warning")
+        }
+        if !isResolutionValid {
+            return resolutionWarning ?? String(localized: "Resolution must be between 640 and 8192.", comment: "Invalid resolution transcription warning")
         }
         if SettingsManager.shared.settings.noTimestamps {
             return String(localized: "Disable Timestamps must be turned off to create SRT and FCPXML captions.", comment: "No timestamps transcription warning")
@@ -372,6 +432,9 @@ class HomeViewModel: ObservableObject {
         let tempFolder = NSTemporaryDirectory()
         let projectName = self.projectName
         let fps = self.currentFps
+        let outputWidth = self.currentWidth
+        let outputHeight = self.currentHeight
+        let titleStyle = SettingsManager.shared.titleStyleSettings
         let language = self.selectedLanguage
         self.totalBatch = nil
         self.status = String(localized: "Preparing audio...", comment: "Preparing audio status")
@@ -458,6 +521,9 @@ class HomeViewModel: ObservableObject {
                     selectedLanguage: language,
                     segmentDurationSeconds: validSegmentDuration,
                     fps: fps,
+                    outputWidth: outputWidth,
+                    outputHeight: outputHeight,
+                    titleStyle: titleStyle,
                     projectName: projectName
                 )
             }
@@ -473,6 +539,9 @@ class HomeViewModel: ObservableObject {
         selectedLanguage: String,
         segmentDurationSeconds: TimeInterval,
         fps: Float,
+        outputWidth: Int,
+        outputHeight: Int,
+        titleStyle: TitleStyleSettings,
         projectName: String
     ) {
         if hasCancellationRequest {
@@ -485,6 +554,9 @@ class HomeViewModel: ObservableObject {
                 srtFiles: srtFiles,
                 segmentDurationSeconds: segmentDurationSeconds,
                 fps: fps,
+                outputWidth: outputWidth,
+                outputHeight: outputHeight,
+                titleStyle: titleStyle,
                 projectName: projectName
             )
             return
@@ -527,6 +599,9 @@ class HomeViewModel: ObservableObject {
                     selectedLanguage: selectedLanguage,
                     segmentDurationSeconds: segmentDurationSeconds,
                     fps: fps,
+                    outputWidth: outputWidth,
+                    outputHeight: outputHeight,
+                    titleStyle: titleStyle,
                     projectName: projectName
                 )
             }
@@ -537,6 +612,9 @@ class HomeViewModel: ObservableObject {
         srtFiles: [String],
         segmentDurationSeconds: TimeInterval,
         fps: Float,
+        outputWidth: Int,
+        outputHeight: Int,
+        titleStyle: TitleStyleSettings,
         projectName: String
     ) {
         progress = 1.0
@@ -567,7 +645,10 @@ class HomeViewModel: ObservableObject {
         let outputFCPXMLFilePath = FCPXMLService.srtToFCPXML(
             srtPath: outputSRTFilePath,
             fps: fps,
-            projectName: projectName
+            projectName: projectName,
+            width: outputWidth,
+            height: outputHeight,
+            titleStyle: titleStyle
         )
         guard FCPXMLService.isValidFCPXMLFile(outputFCPXMLFilePath) else {
             failTranscription("Error: Failed to generate FCPXML")

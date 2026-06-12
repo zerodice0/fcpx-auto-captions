@@ -125,14 +125,14 @@ class SRTConverterViewModel: ObservableObject {
     // MARK: - Computed Properties
     var currentWidth: Int {
         if selectedResolution == .custom {
-            return Int(customWidth) ?? 1920
+            return Int(customWidth) ?? 0
         }
         return selectedResolution.width
     }
     
     var currentHeight: Int {
         if selectedResolution == .custom {
-            return Int(customHeight) ?? 1080
+            return Int(customHeight) ?? 0
         }
         return selectedResolution.height
     }
@@ -150,6 +150,10 @@ class SRTConverterViewModel: ObservableObject {
     }
     
     var resolutionWarning: String? {
+        if selectedResolution == .custom && (Int(customWidth) == nil || Int(customHeight) == nil) {
+            return String(localized: "Resolution must be numeric.", comment: "Non-numeric resolution warning")
+        }
+
         let validation = VideoResolution.isValidResolution(width: currentWidth, height: currentHeight)
         return validation.message
     }
@@ -236,12 +240,12 @@ class SRTConverterViewModel: ObservableObject {
     /// Update position based on current resolution when preset changes
     private func updatePositionForResolution() {
         guard titleStyle.positionPreset != .custom else { return }
-        titleStyle.updatePositionFromPreset(height: currentHeight)
+        titleStyle.updatePositionFromPreset(width: currentWidth, height: currentHeight)
     }
 
     /// Calculate position values for a preset (for local state in View)
     func calculatePositionForPreset(_ preset: PositionPreset) -> (x: CGFloat, y: CGFloat) {
-        return preset.position(for: currentHeight)
+        return preset.position(forWidth: currentWidth, height: currentHeight)
     }
 
 }
